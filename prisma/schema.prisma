@@ -1,0 +1,96 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Campaign {
+  id              String         @id @default(cuid())
+  name            String
+  targetNiche     String
+  targetLocation  String
+  status          String         @default("ACTIVE") // ACTIVE, PAUSED, COMPLETED
+  totalLeadsFound Int            @default(0)
+  totalAudited    Int            @default(0)
+  totalSent       Int            @default(0)
+  totalDelivered  Int            @default(0)
+  totalRead       Int            @default(0)
+  totalReplied    Int            @default(0)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  leads           Lead[]
+  dispatchLogs    DispatchLog[]
+}
+
+model Lead {
+  id              String         @id @default(cuid())
+  campaignId      String?
+  campaign        Campaign?      @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  placeId         String?        @unique
+  businessName    String
+  category        String?
+  address         String?
+  city            String?
+  state           String?
+  country         String?        @default("IN")
+  phoneNumber     String?
+  formattedPhone  String?        @unique
+  websiteUrl      String?
+  googleRating    Float?
+  reviewCount     Int?           @default(0)
+  googleMapsUrl   String?
+  
+  // Digital Footprint & Audit
+  hasWebsite      Boolean        @default(false)
+  websiteWorking  Boolean        @default(false)
+  isMobileFriendly Boolean       @default(false)
+  pageSpeedScore  Int?
+  sslValid        Boolean        @default(false)
+  pitchCategory   String?        // "WEB_APP_DEV", "ERP_CRM", "LOCAL_SEO_MARKETING", "GMB_RANKING"
+  auditSummary    String?
+  
+  // AI Pitch Copy
+  personalizedPitch String?
+  pitchAngle       String?
+  
+  // Outreach Status
+  status          String         @default("DISCOVERED") // DISCOVERED, AUDITED, PITCH_GENERATED, QUEUED, SENT, DELIVERED, READ, REPLIED, CONVERTED, DO_NOT_CONTACT
+  lastMessageSentAt DateTime?
+  
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  dispatchLogs    DispatchLog[]
+}
+
+model DispatchLog {
+  id              String         @id @default(cuid())
+  leadId          String
+  lead            Lead           @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  campaignId      String?
+  campaign        Campaign?      @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  provider        String         // "META_CLOUD_API" or "CUSTOM_CRM"
+  messageType     String         @default("TEMPLATE") // TEMPLATE, TEXT
+  templateName    String?
+  messageBody     String
+  status          String         // QUEUED, SENT, DELIVERED, READ, FAILED
+  whatsappMsgId   String?
+  errorMessage    String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+model AppSettings {
+  id                    String   @id @default("global_settings")
+  autopilotEnabled      Boolean  @default(false)
+  dailyLeadLimit        Int      @default(25)
+  sendDelaySecondsMin   Int      @default(30)
+  sendDelaySecondsMax   Int      @default(90)
+  activeWhatsAppProvider String  @default("META_CLOUD_API") // "META_CLOUD_API" or "CUSTOM_CRM"
+  customCrmUrl          String?
+  customCrmKey          String?
+  targetNichesJson      String   @default("[\"Dental Clinics\",\"Interior Designers\",\"Luxury Spas & Salons\",\"Real Estate Consultants\",\"Physiotherapy Centers\",\"Boutique Hotels\",\"Car Detailing & Garages\",\"Architects\",\"Roofing & Solar Contractors\",\"Dermatology & Skin Care\"]")
+  targetLocationsJson   String   @default("[\"South Mumbai\",\"Bandra Mumbai\",\"Andheri Mumbai\",\"Koregaon Park Pune\",\"Baner Pune\",\"Indiranagar Bangalore\",\"Koramangala Bangalore\",\"HSR Layout Bangalore\",\"Gurgaon Golf Course Road\",\"Jubilee Hills Hyderabad\"]")
+  updatedAt             DateTime @updatedAt
+}
