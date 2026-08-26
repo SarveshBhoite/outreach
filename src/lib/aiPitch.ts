@@ -1,10 +1,88 @@
-import { GoogleGenAI } from '@google/genai';
 import { AuditResult } from './auditor';
 
 export interface GeneratedPitch {
   pitchText: string;
   pitchAngle: string;
+  templateCategory: 'WEB_APP_DEVELOPMENT' | 'ERP_CRM_AUTOMATION' | 'SEO_GOOGLE_RANKING';
+  metaTemplateName: string;
+  metaTemplateParameters: string[];
   keyHooks: string[];
+}
+
+export function cleanBusinessName(rawName: string): string {
+  if (!rawName) return 'there';
+  let cleaned = rawName.split(/[-–|:,•]/)[0].trim();
+  const words = cleaned.split(' ');
+  if (words.length > 4) {
+    cleaned = words.slice(0, 3).join(' ');
+  }
+  return cleaned;
+}
+
+/**
+ * Universal B2B Outreach Engine using the 3 Verified & Approved Meta Templates:
+ * 1. universal_b2b_web_v2 (For businesses without a website)
+ * 2. universal_b2b_crm_intro (For businesses lacking WhatsApp CRM / lead automation)
+ * 3. universal_b2b_seo_intro (For established businesses needing Google 3-Pack & SEO)
+ */
+export function buildUniversalProductionPitch(
+  rawBusinessName: string,
+  category: string | null,
+  city: string | null,
+  googleRating: number | null,
+  reviewCount: number | null,
+  audit: AuditResult
+): GeneratedPitch {
+  const name = cleanBusinessName(rawBusinessName);
+  const location = city || 'your area';
+  const cleanCategory = category ? category.split(',')[0].trim() : 'businesses';
+  const ratingStr = `${googleRating || 4.8}★`;
+
+  // -------------------------------------------------------------------------
+  // TEMPLATE 1: universal_b2b_web_v2 (Businesses without Website)
+  // -------------------------------------------------------------------------
+  if (!audit.hasWebsite || !audit.websiteWorking) {
+    const pitchText = `Hello Team ${name},\n\nKudos on ${name}'s ${ratingStr} Google profile in ${location}—great customer reviews! 👏\n\nWe noticed you don't have an active official website to showcase your work online. We help ${cleanCategory} build fast, modern websites & custom business apps that turn Google visitors directly into qualified WhatsApp inquiries.\n\nCan I send over a quick 2-page design preview & feature plan we put together for ${name}?`;
+
+    return {
+      pitchText,
+      pitchAngle: 'Custom Web & Business App Development',
+      templateCategory: 'WEB_APP_DEVELOPMENT',
+      metaTemplateName: 'universal_b2b_web_v2',
+      metaTemplateParameters: [name, ratingStr, location, cleanCategory],
+      keyHooks: ['Modern Website', 'Digital Service Catalog', 'Direct WhatsApp Inquiries'],
+    };
+  }
+
+  // -------------------------------------------------------------------------
+  // TEMPLATE 2: universal_b2b_crm_intro (Businesses Needing CRM & Automation)
+  // -------------------------------------------------------------------------
+  if (audit.pitchCategory === 'ERP_CRM' || !audit.isMobileFriendly) {
+    const pitchText = `Hello Team ${name},\n\nKudos on your ${ratingStr} reputation in ${location}! 🌟\n\nI visited your website and loved your work. We noticed an opportunity to streamline how you handle incoming customer inquiries—especially when staff is busy or after business hours.\n\nWe build custom WhatsApp CRM workflows, automated customer follow-ups, and ERP business management software tailored for ${cleanCategory} to capture and convert more client inquiries automatically.\n\nWould you be open to seeing a quick 1-minute visual walkthrough of how this works?`;
+
+    return {
+      pitchText,
+      pitchAngle: 'Custom ERP, CRM & Business Automation',
+      templateCategory: 'ERP_CRM_AUTOMATION',
+      metaTemplateName: 'universal_b2b_crm_intro',
+      metaTemplateParameters: [name, ratingStr, location, cleanCategory],
+      keyHooks: ['24/7 WhatsApp Lead Capture', 'Automated Inquiries', 'Custom Business ERP'],
+    };
+  }
+
+  // -------------------------------------------------------------------------
+  // TEMPLATE 3: universal_b2b_seo_intro (Businesses With Active Sites -> SEO/Ads)
+  // -------------------------------------------------------------------------
+  const pitchText = `Hi Team ${name},\n\nI came across ${name} while looking at established ${cleanCategory} in ${location} (${ratingStr} on Google).\n\nYour website looks great, but right now, you're missing out on the top 3 spots in Google Maps search results where 70% of high-intent clients click first when looking for your services.\n\nWe specialize in ranking local businesses at the very top of Google Search and running targeted digital marketing campaigns to bring steady weekly client inquiries.\n\nCan I send you a free 1-page competitor keyword analysis for ${location}?`;
+
+  return {
+    pitchText,
+    pitchAngle: 'Google Search & Maps 3-Pack Ranking (SEO / Marketing)',
+    templateCategory: 'SEO_GOOGLE_RANKING',
+    metaTemplateName: 'universal_b2b_seo_intro',
+    metaTemplateParameters: [name, cleanCategory, location, ratingStr],
+    keyHooks: ['Google Local 3-Pack Domination', 'Competitor Keyword Analysis', 'Targeted Inquiries'],
+  };
 }
 
 export async function generatePersonalizedPitch(
@@ -13,76 +91,14 @@ export async function generatePersonalizedPitch(
   city: string | null,
   googleRating: number | null,
   reviewCount: number | null,
-  audit: AuditResult,
-  apiKey: string = process.env.GEMINI_API_KEY || ''
+  audit: AuditResult
 ): Promise<GeneratedPitch> {
-  // Determine pitch angle
-  let angle = 'Website & App Development';
-  if (audit.pitchCategory === 'ERP_CRM') angle = 'Custom ERP / WhatsApp CRM & Automation';
-  else if (audit.pitchCategory === 'LOCAL_SEO_MARKETING') angle = 'Local SEO & Google 3-Pack Ranking';
-  else if (audit.pitchCategory === 'GMB_RANKING') angle = 'Google Review Booster & Reputation Management';
-
-  // Fallback template if Gemini is offline or not configured
-  const fallbackPitch = `Hi ${businessName} team,\n\nI came across your profile on Google (${googleRating || 4.8}★ with ${reviewCount || 'great'} reviews in ${city || 'your area'}).\n\n${
-    !audit.hasWebsite
-      ? `I noticed you don't have a modern website/booking app set up yet. We help ${category || 'local businesses'} build fast, beautiful websites with automated WhatsApp booking to double client inquiries.`
-      : `I checked out your website and loved what you do! We help high-growth ${category || 'businesses'} dominate Google Maps 3-Pack search results, boost SEO rankings, and automate customer inquiries with custom WhatsApp CRM tools.`
-  }\n\nWould you be open to a quick 5-min demo or a free visual mockup for ${businessName}? Let me know!`;
-
-  if (!apiKey) {
-    return {
-      pitchText: fallbackPitch,
-      pitchAngle: angle,
-      keyHooks: audit.recommendations,
-    };
-  }
-
-  try {
-    const ai = new GoogleGenAI({ apiKey });
-    const prompt = `
-You are an elite B2B sales copywriter crafting a concise, warm, highly personalized WhatsApp outreach message for business owners in India.
-
-Business Details:
-- Name: "${businessName}"
-- Industry / Category: "${category || 'Local Business'}"
-- City / Area: "${city || 'Local Market'}"
-- Google Rating: ${googleRating || 'High'} stars (${reviewCount || 0} reviews)
-- Digital Audit Finding: ${audit.auditSummary}
-- Pitch Category: ${audit.pitchCategory}
-- Key Pain Points / Opportunities: ${audit.recommendations.join(', ')}
-
-Guidelines for the WhatsApp Pitch:
-1. Tone: Respectful, conversational, crisp, non-spammy, and consultative.
-2. Structure:
-   - Quick compliment referencing their actual business rating/niche.
-   - Specific observation from the digital audit (e.g. lack of automated WhatsApp booking, missing mobile-responsive site, or opportunity to capture top 3 Google local searches).
-   - Clear value proposition of what we deliver (Custom Web/Mobile App, CRM/WhatsApp ERP automation, or Local SEO/Google Ranking).
-   - Low-friction Call To Action (e.g., "Can I share a free 2-minute mockup/audit video for ${businessName}?").
-3. Length: Under 80-110 words. No excessive emojis.
-
-Output format:
-Return ONLY the final WhatsApp message text, with natural line breaks.
-`;
-
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-    });
-
-    const generated = response.text?.trim() || fallbackPitch;
-
-    return {
-      pitchText: generated,
-      pitchAngle: angle,
-      keyHooks: audit.recommendations,
-    };
-  } catch (error: unknown) {
-    const err = error as Error;
-    console.warn('Gemini pitch generation failed, using fallback copy:', err.message);
-    return {
-      pitchText: fallbackPitch,
-      pitchAngle: angle,
-      keyHooks: audit.recommendations,
-    };
-  }
+  return buildUniversalProductionPitch(
+    businessName,
+    category,
+    city,
+    googleRating,
+    reviewCount,
+    audit
+  );
 }

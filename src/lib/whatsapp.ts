@@ -3,41 +3,74 @@ import axios from 'axios';
 export interface WhatsAppSendResult {
   success: boolean;
   messageId?: string;
-  provider: 'META_CLOUD_API' | 'CUSTOM_CRM';
+  provider: 'CRM_API_KEY' | 'META_CLOUD_API';
   error?: string;
+  crmSynced?: boolean;
 }
 
 export interface SendMessageOptions {
-  recipientPhone: string; // E.164 formatted like +919876543210
+  recipientPhone: string; // e.g. +919876543210 or 919876543210
+  recipientName?: string;
   templateName?: string;
   templateLanguage?: string;
   bodyText?: string;
   templateParameters?: string[];
-  provider?: 'META_CLOUD_API' | 'CUSTOM_CRM';
-  customCrmUrl?: string;
-  customCrmKey?: string;
+  provider?: 'CRM_API_KEY' | 'META_CLOUD_API';
+  crmApiUrl?: string;
+  crmApiKey?: string;
 }
 
+/**
+ * Unified WhatsApp dispatcher:
+ * Dispatches via your JISNU CRM API Gateway (https://crmapi.jisnudigital.com/api/v1/whatsapp/send-template)
+ * which sends to WhatsApp and records the message in your CRM chat history in real time!
+ */
 export async function sendWhatsAppMessage(options: SendMessageOptions): Promise<WhatsAppSendResult> {
-  const provider = options.provider || (process.env.CUSTOM_CRM_API_URL ? 'CUSTOM_CRM' : 'META_CLOUD_API');
-
-  // Strip '+' from phone number for API payloads
   const cleanPhone = options.recipientPhone.replace(/[^\d]/g, '');
+  const crmApiKey = options.crmApiKey || process.env.CRM_API_KEY;
+  const crmApiUrl = options.crmApiUrl || process.env.CRM_API_URL || 'https://crmapi.jisnudigital.com/api/v1/whatsapp/send-template';
 
-  if (provider === 'CUSTOM_CRM') {
-    return sendViaCustomCrm(cleanPhone, options);
-  } else {
-    return sendViaMetaCloudApi(cleanPhone, options);
+  // 1. Primary: Send via your CRM API Key for instant CRM Chat Logging
+  if (crmApiKey) {
+    try {
+      const payload = {
+        to: cleanPhone,
+        template_name: options.templateName || 'universal_b2b_web_v2',
+        language: options.templateLanguage || 'en_US',
+        variables: options.templateParameters || [],
+      };
+
+      const res = await axios.post(crmApiUrl, payload, {
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': crmApiKey,
+        },
+        timeout: 12000,
+      });
+
+      return {
+        success: true,
+        messageId: res.data?.messageId || res.data?.id || `crm_${Date.now()}`,
+        provider: 'CRM_API_KEY',
+        crmSynced: true,
+      };
+    } catch (crmErr: any) {
+      const errMsg = crmErr.response?.data?.error || crmErr.response?.data?.message || crmErr.message;
+      console.warn(`[CRM Gateway Warning] CRM API returned error: ${errMsg}. Falling back to direct Meta Cloud API...`);
+    }
   }
+
+  // 2. Direct Meta Fallback
+  return sendViaDirectMeta(cleanPhone, options);
 }
 
-async function sendViaMetaCloudApi(
+async function sendViaDirectMeta(
   cleanPhone: string,
   options: SendMessageOptions
 ): Promise<WhatsAppSendResult> {
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
   const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
-  const templateName = options.templateName || process.env.WHATSAPP_DEFAULT_TEMPLATE || 'hello_world';
+  const templateName = options.templateName || 'universal_b2b_web_v2';
   const languageCode = options.templateLanguage || 'en_US';
 
   if (!phoneNumberId || !accessToken) {
@@ -51,58 +84,23 @@ async function sendViaMetaCloudApi(
   try {
     const url = `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`;
 
-    // Construct Meta Payload
-    let payload: Record<string, unknown>;
-
-    if (templateName === 'hello_world') {
-      // Standard Meta Test Template
-      payload = {
-        messaging_product: 'whatsapp',
-        to: cleanPhone,
-        type: 'template',
-        template: {
-          name: 'hello_world',
-          language: {
-            code: 'en_US',
-          },
-        },
-      };
-    } else if (options.templateParameters && options.templateParameters.length > 0) {
-      // Dynamic parameters in template body
-      payload = {
-        messaging_product: 'whatsapp',
-        to: cleanPhone,
-        type: 'template',
-        template: {
-          name: templateName,
-          language: {
-            code: languageCode,
-          },
-          components: [
-            {
-              type: 'body',
-              parameters: options.templateParameters.map((param) => ({
-                type: 'text',
-                text: param,
-              })),
-            },
-          ],
-        },
-      };
-    } else {
-      // Standard template without params or text message fallback
-      payload = {
-        messaging_product: 'whatsapp',
-        to: cleanPhone,
-        type: 'template',
-        template: {
-          name: templateName,
-          language: {
-            code: languageCode,
-          },
-        },
-      };
-    }
+    const payload = {
+      messaging_product: 'whatsapp',
+      to: cleanPhone,
+      type: 'template',
+      template: {
+        name: templateName,
+        language: { code: languageCode },
+        components: options.templateParameters?.length
+          ? [
+              {
+                type: 'body',
+                parameters: options.templateParameters.map((p) => ({ type: 'text', text: p })),
+              },
+            ]
+          : undefined,
+      },
+    };
 
     const response = await axios.post(url, payload, {
       headers: {
@@ -111,70 +109,19 @@ async function sendViaMetaCloudApi(
       },
     });
 
-    const msgId = response.data?.messages?.[0]?.id || 'meta_sent_' + Date.now();
+    const msgId = response.data?.messages?.[0]?.id || `wamid.sent_${Date.now()}`;
     return {
       success: true,
       messageId: msgId,
       provider: 'META_CLOUD_API',
+      crmSynced: false,
     };
-  } catch (error: unknown) {
-    const axiosError = error as { response?: { data?: { error?: { message?: string } } }; message: string };
-    const errMsg = axiosError.response?.data?.error?.message || axiosError.message || 'Unknown Meta API error';
-    console.error('Meta WhatsApp Cloud API send failed:', errMsg);
+  } catch (error: any) {
+    const errMsg = error.response?.data?.error?.message || error.message || 'Meta API error';
     return {
       success: false,
       provider: 'META_CLOUD_API',
       error: errMsg,
-    };
-  }
-}
-
-async function sendViaCustomCrm(
-  cleanPhone: string,
-  options: SendMessageOptions
-): Promise<WhatsAppSendResult> {
-  const crmUrl = options.customCrmUrl || process.env.CUSTOM_CRM_API_URL;
-  const crmKey = options.customCrmKey || process.env.CUSTOM_CRM_API_KEY;
-
-  if (!crmUrl) {
-    return {
-      success: false,
-      provider: 'CUSTOM_CRM',
-      error: 'Custom CRM API URL is not configured.',
-    };
-  }
-
-  try {
-    const response = await axios.post(
-      crmUrl,
-      {
-        phoneNumber: cleanPhone,
-        message: options.bodyText,
-        templateName: options.templateName,
-        templateParameters: options.templateParameters,
-      },
-      {
-        headers: {
-          Authorization: crmKey ? `Bearer ${crmKey}` : undefined,
-          'x-api-key': crmKey,
-          'Content-Type': 'application/json',
-        },
-        timeout: 10000,
-      }
-    );
-
-    return {
-      success: true,
-      messageId: response.data?.messageId || response.data?.id || 'crm_sent_' + Date.now(),
-      provider: 'CUSTOM_CRM',
-    };
-  } catch (error: unknown) {
-    const err = error as Error;
-    console.error('Custom CRM WhatsApp API send failed:', err.message);
-    return {
-      success: false,
-      provider: 'CUSTOM_CRM',
-      error: err.message,
     };
   }
 }
