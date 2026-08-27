@@ -13,8 +13,8 @@ export async function GET() {
           id: 'global_settings',
           globalAutoDispatch: false,
           globalScrapeLimit: 20,
-          crmApiUrl: 'https://crmapi.jisnudigital.com/api/v1/whatsapp/send-template',
-          crmApiKey: 'ak_live_bb3a202dc4c32629a10ebb3a2c3f86a4',
+          crmApiUrl: process.env.CRM_API_URL || 'https://crmapi.jisnudigital.com/api/v1/whatsapp/send-template',
+          crmApiKey: process.env.CRM_API_KEY || null,
         },
       });
     }
@@ -35,14 +35,14 @@ export async function POST(request: Request) {
         globalAutoDispatch: body.globalAutoDispatch,
         globalScrapeLimit: body.globalScrapeLimit ? parseInt(body.globalScrapeLimit, 10) : 20,
         crmApiUrl: body.crmApiUrl,
-        crmApiKey: body.crmApiKey,
+        crmApiKey: body.crmApiKey || null,
       },
       create: {
         id: 'global_settings',
         globalAutoDispatch: body.globalAutoDispatch ?? false,
         globalScrapeLimit: body.globalScrapeLimit ? parseInt(body.globalScrapeLimit, 10) : 20,
-        crmApiUrl: body.crmApiUrl || 'https://crmapi.jisnudigital.com/api/v1/whatsapp/send-template',
-        crmApiKey: body.crmApiKey || 'ak_live_bb3a202dc4c32629a10ebb3a2c3f86a4',
+        crmApiUrl: body.crmApiUrl || process.env.CRM_API_URL || 'https://crmapi.jisnudigital.com/api/v1/whatsapp/send-template',
+        crmApiKey: body.crmApiKey || process.env.CRM_API_KEY || null,
       },
     });
 

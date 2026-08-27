@@ -74,7 +74,7 @@ export default function OutreachDashboard() {
     globalAutoDispatch: false,
     globalScrapeLimit: 20,
     crmApiUrl: 'https://crmapi.jisnudigital.com/api/v1/whatsapp/send-template',
-    crmApiKey: 'ak_live_bb3a202dc4c32629a10ebb3a2c3f86a4',
+    crmApiKey: '',
   });
   const [savingSettings, setSavingSettings] = useState(false);
 
@@ -576,6 +576,7 @@ export default function OutreachDashboard() {
                       <th className="px-4 py-3">Location</th>
                       <th className="px-4 py-3">Phone (WhatsApp)</th>
                       <th className="px-4 py-3">Website</th>
+                      <th className="px-4 py-3">Pitch Angle</th>
                       <th className="px-4 py-3">Assigned Meta Template</th>
                       <th className="px-4 py-3">Template Sent?</th>
                       <th className="px-4 py-3 text-right">Action</th>
@@ -584,7 +585,7 @@ export default function OutreachDashboard() {
                   <tbody className="divide-y divide-slate-800/60">
                     {leads.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="text-center py-12 text-slate-500">
+                        <td colSpan={9} className="text-center py-12 text-slate-500">
                           No leads discovered yet. Run the Autopilot engine to populate leads!
                         </td>
                       </tr>
@@ -619,8 +620,25 @@ export default function OutreachDashboard() {
                             )}
                           </td>
                           <td className="px-4 py-3">
+                            <span className="text-[11px] font-medium text-emerald-300 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-500/20 truncate max-w-[170px] block">
+                              {lead.pitchAngle || (
+                                !lead.hasWebsite 
+                                  ? 'Custom Web & Business App'
+                                  : lead.pitchCategory === 'ERP_CRM' 
+                                  ? 'WhatsApp CRM & ERP Automation' 
+                                  : 'Google Search & Maps 3-Pack Ranking'
+                              )}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
                             <span className="text-[11px] font-mono text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
-                              {lead.assignedTemplate || 'universal_b2b_web_v2'}
+                              {lead.assignedTemplate || (
+                                !lead.hasWebsite 
+                                  ? 'universal_b2b_web_v2'
+                                  : (lead.pitchAngle?.includes('SEO') || lead.pitchAngle?.includes('3-Pack') || lead.pitchCategory === 'LOCAL_SEO_MARKETING')
+                                  ? 'universal_b2b_seo_intro'
+                                  : 'universal_b2b_crm_intro'
+                              )}
                             </span>
                           </td>
                           <td className="px-4 py-3">
@@ -835,7 +853,13 @@ export default function OutreachDashboard() {
                     <FileCheck className="h-3.5 w-3.5" /> Assigned Meta Template To Send:
                   </span>
                   <span className="font-mono bg-indigo-900/60 px-2 py-0.5 rounded text-[11px] text-indigo-200">
-                    {selectedLead.assignedTemplate || 'universal_b2b_web_v2'}
+                    {selectedLead.assignedTemplate || (
+                      !selectedLead.hasWebsite 
+                        ? 'universal_b2b_web_v2'
+                        : (selectedLead.pitchAngle?.includes('SEO') || selectedLead.pitchAngle?.includes('3-Pack') || selectedLead.pitchCategory === 'LOCAL_SEO_MARKETING')
+                        ? 'universal_b2b_seo_intro'
+                        : 'universal_b2b_crm_intro'
+                    )}
                   </span>
                 </div>
                 <div className="text-slate-300 text-[11px]">

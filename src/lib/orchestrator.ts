@@ -36,8 +36,8 @@ export async function runAutopilotPipeline(
         id: 'global_settings',
         globalAutoDispatch: false,
         globalScrapeLimit: 20,
-        crmApiUrl: 'https://crmapi.jisnudigital.com/api/v1/whatsapp/send-template',
-        crmApiKey: 'ak_live_bb3a202dc4c32629a10ebb3a2c3f86a4',
+        crmApiUrl: process.env.CRM_API_URL || 'https://crmapi.jisnudigital.com/api/v1/whatsapp/send-template',
+        crmApiKey: process.env.CRM_API_KEY || null,
       },
     });
   }

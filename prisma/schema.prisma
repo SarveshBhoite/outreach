@@ -91,6 +91,6 @@ model AppSettings {
   globalAutoDispatch    Boolean  @default(false)
   globalScrapeLimit     Int      @default(20)
   crmApiUrl             String   @default("https://crmapi.jisnudigital.com/api/v1/whatsapp/send-template")
-  crmApiKey             String   @default("ak_live_bb3a202dc4c32629a10ebb3a2c3f86a4")
+  crmApiKey             String?
   updatedAt             DateTime @updatedAt
 }
