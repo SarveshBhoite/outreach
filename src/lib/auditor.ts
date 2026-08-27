@@ -20,10 +20,12 @@ export async function auditDigitalFootprint(
 ): Promise<AuditResult> {
   const recommendations: string[] = [];
 
-  // CASE 1: No Website Listed on Google
+  // =========================================================================
+  // CASE 1: No Website Listed on Google (True Web/App Candidate)
+  // =========================================================================
   if (!websiteUrl || websiteUrl.trim() === '') {
     recommendations.push('Create modern mobile-responsive business website');
-    recommendations.push('Implement 24/7 automated WhatsApp lead capture & booking system');
+    recommendations.push('Implement direct WhatsApp lead inquiry capture');
     recommendations.push('Set up custom domain & professional business email');
 
     return {
@@ -32,7 +34,7 @@ export async function auditDigitalFootprint(
       isMobileFriendly: false,
       sslValid: false,
       pitchCategory: 'WEB_APP_DEV',
-      auditSummary: `No active website found for ${businessName || 'this business'}. High potential for custom web presence, mobile booking flow, or CRM.`,
+      auditSummary: `No active website found for ${businessName || 'this business'}. Missing digital presence.`,
       recommendations,
     };
   }
@@ -45,7 +47,7 @@ export async function auditDigitalFootprint(
 
   let websiteWorking = false;
   let sslValid = targetUrl.startsWith('https://');
-  let isMobileFriendly = false;
+  let isMobileFriendly = true; // Default true if working to avoid falsely downgrading to Web Dev
   let pageSpeedScore: number | undefined = undefined;
 
   try {
@@ -64,54 +66,45 @@ export async function auditDigitalFootprint(
     websiteWorking = response.status >= 200 && response.status < 400;
 
     if (websiteWorking) {
-      const html = response.data;
-      const $ = cheerio.load(typeof html === 'string' ? html : '');
+      const html = typeof response.data === 'string' ? response.data : '';
+      const $ = cheerio.load(html);
 
-      // Check viewport meta tag for mobile friendliness
+      // Viewport check
       const viewport = $('meta[name="viewport"]').attr('content');
       isMobileFriendly = Boolean(viewport && viewport.includes('width=device-width'));
 
-      // Check title and meta description for SEO presence
-      const title = $('title').text().trim();
-      const metaDesc = $('meta[name="description"]').attr('content');
-      const hasCrmOrChat = html.includes('whatsapp') || html.includes('intercom') || html.includes('tidio') || html.includes('crisp');
+      // Check chat/CRM presence
+      const hasCrmOrChat =
+        html.toLowerCase().includes('whatsapp') ||
+        html.toLowerCase().includes('intercom') ||
+        html.toLowerCase().includes('tidio') ||
+        html.toLowerCase().includes('crisp') ||
+        html.toLowerCase().includes('wati');
 
-      // Estimate speed score
+      // Speed estimate
       if (responseTimeMs < 1000) pageSpeedScore = 90;
       else if (responseTimeMs < 2500) pageSpeedScore = 75;
-      else pageSpeedScore = 45;
-
-      if (!sslValid) {
-        recommendations.push('Upgrade website to secure HTTPS / SSL certificate');
-      }
-
-      if (!isMobileFriendly) {
-        recommendations.push('Modernize layout for smooth mobile viewing & instant touch call/chat actions');
-      }
-
-      if (!metaDesc || metaDesc.length < 20) {
-        recommendations.push('Optimize meta tags and on-page SEO for high Google ranking');
-      }
+      else pageSpeedScore = 55;
 
       if (!hasCrmOrChat) {
-        recommendations.push('Integrate automated WhatsApp CRM & appointment scheduler');
+        recommendations.push('Integrate automated 24/7 WhatsApp CRM & lead follow-up system');
       }
 
-      // Check Google rating strength
-      if ((reviewCount || 0) < 20 || (googleRating || 0) < 4.2) {
-        recommendations.push('Deploy automated Google review booster system to dominate local 3-pack');
-      }
+      recommendations.push('Optimize Google Local 3-Pack rankings and review visibility');
 
-      // Pitch decision logic
+      // ---------------------------------------------------------------------
+      // PITCH CATEGORIZATION LOGIC:
+      // If the business ALREADY HAS a working website:
+      // -> If it lacks WhatsApp chat/CRM -> 'ERP_CRM'
+      // -> Otherwise -> 'LOCAL_SEO_MARKETING'
+      // *Never downgrade an active website to 'WEB_APP_DEV'*
+      // ---------------------------------------------------------------------
       let pitchCategory: 'WEB_APP_DEV' | 'ERP_CRM' | 'LOCAL_SEO_MARKETING' | 'GMB_RANKING' = 'LOCAL_SEO_MARKETING';
-      if (!isMobileFriendly || pageSpeedScore < 50) {
-        pitchCategory = 'WEB_APP_DEV';
-      } else if (!hasCrmOrChat) {
+
+      if (!hasCrmOrChat) {
         pitchCategory = 'ERP_CRM';
-      } else if ((googleRating || 0) >= 4.0) {
-        pitchCategory = 'LOCAL_SEO_MARKETING';
       } else {
-        pitchCategory = 'GMB_RANKING';
+        pitchCategory = 'LOCAL_SEO_MARKETING';
       }
 
       return {
@@ -121,7 +114,7 @@ export async function auditDigitalFootprint(
         pageSpeedScore,
         sslValid,
         pitchCategory,
-        auditSummary: `Website active (${responseTimeMs}ms response). ${isMobileFriendly ? 'Mobile responsive.' : 'Missing mobile viewport optimization.'} ${hasCrmOrChat ? 'Chat present.' : 'No direct WhatsApp CRM integration found.'}`,
+        auditSummary: `Active website (${responseTimeMs}ms response). ${hasCrmOrChat ? 'Chat present.' : 'No automated WhatsApp CRM found.'}`,
         recommendations,
       };
     }
@@ -130,8 +123,8 @@ export async function auditDigitalFootprint(
     console.warn(`Could not probe website ${targetUrl}:`, err.message);
   }
 
-  // If website failed to respond
-  recommendations.push('Rebuild and restore broken/inaccessible website with high speed modern infrastructure');
+  // CASE 3: Website URL is listed on Google but server is down / dead
+  recommendations.push('Rebuild and restore broken/inaccessible website');
   recommendations.push('Deploy instant WhatsApp lead capture system');
 
   return {
@@ -140,7 +133,7 @@ export async function auditDigitalFootprint(
     isMobileFriendly: false,
     sslValid: false,
     pitchCategory: 'WEB_APP_DEV',
-    auditSummary: `Website domain ${targetUrl} listed on Google but currently unresponsive or broken.`,
+    auditSummary: `Website ${targetUrl} listed on Google but currently unresponsive or broken.`,
     recommendations,
   };
 }
