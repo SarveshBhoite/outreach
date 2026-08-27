@@ -27,6 +27,7 @@ import {
   PanelLeftClose,
   PanelLeft,
   Menu,
+  Mail,
 } from 'lucide-react';
 
 interface Lead {
@@ -37,6 +38,7 @@ interface Lead {
   phoneNumber: string;
   formattedPhone: string;
   websiteUrl?: string;
+  email?: string;
   googleRating?: number;
   reviewCount?: number;
   googleMapsUrl?: string;
@@ -635,6 +637,7 @@ export default function OutreachDashboard() {
                       <th className="px-4 py-3">Niche</th>
                       <th className="px-4 py-3">Location</th>
                       <th className="px-4 py-3">Phone (WhatsApp)</th>
+                      <th className="px-4 py-3">Email Address</th>
                       <th className="px-4 py-3">Website</th>
                       <th className="px-4 py-3">Pitch Angle</th>
                       <th className="px-4 py-3">Assigned Meta Template</th>
@@ -645,7 +648,7 @@ export default function OutreachDashboard() {
                   <tbody className="divide-y divide-slate-800/60">
                     {leads.length === 0 ? (
                       <tr>
-                        <td colSpan={9} className="text-center py-12 text-slate-500">
+                        <td colSpan={10} className="text-center py-12 text-slate-500">
                           No leads discovered yet. Run the Autopilot engine to populate leads!
                         </td>
                       </tr>
@@ -668,6 +671,15 @@ export default function OutreachDashboard() {
                           <td className="px-4 py-3 text-slate-400 truncate max-w-[130px]">{lead.category}</td>
                           <td className="px-4 py-3 text-slate-400 truncate max-w-[120px]">{lead.city || 'India'}</td>
                           <td className="px-4 py-3 font-mono text-emerald-400">{lead.formattedPhone || lead.phoneNumber || 'N/A'}</td>
+                          <td className="px-4 py-3 font-mono text-xs">
+                            {lead.email ? (
+                              <span className="text-sky-400 bg-sky-950/40 px-2 py-0.5 rounded border border-sky-500/20 truncate max-w-[150px] inline-block" title={lead.email}>
+                                {lead.email}
+                              </span>
+                            ) : (
+                              <span className="text-slate-600 italic">Not detected</span>
+                            )}
+                          </td>
                           <td className="px-4 py-3">
                             {lead.hasWebsite ? (
                               <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
@@ -894,8 +906,18 @@ export default function OutreachDashboard() {
                       {selectedLead.category}
                     </span>
                   </h3>
-                  <p className="text-xs text-slate-400 flex items-center gap-1 mt-1">
-                    <MapPin className="h-3 w-3" /> {selectedLead.city || 'India'} • Phone: {selectedLead.formattedPhone || selectedLead.phoneNumber}
+                  <p className="text-xs text-slate-400 flex items-center gap-2 mt-1 flex-wrap">
+                    <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {selectedLead.city || 'India'}</span>
+                    <span>•</span>
+                    <span className="font-mono text-emerald-400">Phone: {selectedLead.formattedPhone || selectedLead.phoneNumber}</span>
+                    {selectedLead.email && (
+                      <>
+                        <span>•</span>
+                        <span className="font-mono text-sky-400 flex items-center gap-1">
+                          <Mail className="h-3 w-3" /> {selectedLead.email}
+                        </span>
+                      </>
+                    )}
                   </p>
                 </div>
                 <button
@@ -957,12 +979,8 @@ export default function OutreachDashboard() {
                 </button>
                 <button
                   onClick={() => handleSendSingleTemplate(selectedLead)}
-                  disabled={sendingSingleLead || selectedLead.isTemplateSent}
-                  className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 ${
-                    selectedLead.isTemplateSent
-                      ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                      : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950'
-                  }`}
+                  disabled={sendingSingleLead}
+                  className="px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition cursor-pointer"
                 >
                   {sendingSingleLead ? (
                     <>
@@ -970,7 +988,7 @@ export default function OutreachDashboard() {
                     </>
                   ) : selectedLead.isTemplateSent ? (
                     <>
-                      <CheckCircle2 className="h-3.5 w-3.5" /> Template Sent
+                      <RefreshCw className="h-3.5 w-3.5" /> Resend Template via CRM
                     </>
                   ) : (
                     <>

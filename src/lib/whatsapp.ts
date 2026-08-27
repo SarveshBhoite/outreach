@@ -21,9 +21,10 @@ export interface SendMessageOptions {
 }
 
 /**
- * Unified WhatsApp dispatcher:
- * Dispatches via your JISNU CRM API Gateway (https://crmapi.jisnudigital.com/api/v1/whatsapp/send-template)
- * which sends to WhatsApp and records the message in your CRM chat history in real time!
+ * Unified WhatsApp Dispatcher:
+ * 1. Primary: Dispatches through JISNU CRM API Gateway (https://crmapi.jisnudigital.com/api/v1/whatsapp/send-template)
+ *    so template messages and replies track in your CRM chat history.
+ * 2. High-Availability Fallback: If CRM gateway hits a transient webhook error, dispatches directly via Meta Cloud API.
  */
 export async function sendWhatsAppMessage(options: SendMessageOptions): Promise<WhatsAppSendResult> {
   const cleanPhone = options.recipientPhone.replace(/[^\d]/g, '');
@@ -48,19 +49,26 @@ export async function sendWhatsAppMessage(options: SendMessageOptions): Promise<
         timeout: 12000,
       });
 
-      return {
-        success: true,
-        messageId: res.data?.messageId || res.data?.id || `crm_${Date.now()}`,
-        provider: 'CRM_API_KEY',
-        crmSynced: true,
-      };
+      if (res.data?.success || res.status === 200) {
+        return {
+          success: true,
+          messageId: res.data?.messageId || res.data?.id || `crm_${Date.now()}`,
+          provider: 'CRM_API_KEY',
+          crmSynced: true,
+        };
+      }
     } catch (crmErr: any) {
-      const errMsg = crmErr.response?.data?.error || crmErr.response?.data?.message || crmErr.message;
-      console.warn(`[CRM Gateway Warning] CRM API returned error: ${errMsg}. Falling back to direct Meta Cloud API...`);
+      const errMsg =
+        crmErr.response?.data?.error?.message ||
+        crmErr.response?.data?.error ||
+        crmErr.response?.data?.message ||
+        crmErr.message;
+
+      console.warn(`[CRM Gateway Warning] CRM API returned (${errMsg}). Engaging Meta Direct Dispatch...`);
     }
   }
 
-  // 2. Direct Meta Fallback
+  // 2. Direct Meta Cloud API Dispatch (Guaranteed Delivery)
   return sendViaDirectMeta(cleanPhone, options);
 }
 

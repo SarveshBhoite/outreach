@@ -39,6 +39,7 @@ model Lead {
   phoneNumber       String?
   formattedPhone    String?        @unique
   websiteUrl        String?
+  email             String?
   googleRating      Float?
   reviewCount       Int?           @default(0)
   googleMapsUrl     String?

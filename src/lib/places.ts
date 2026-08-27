@@ -16,20 +16,35 @@ export interface PlaceLead {
 
 export function normalizePhoneNumber(rawPhone?: string, defaultCountry = '91'): string | null {
   if (!rawPhone) return null;
-  let cleaned = rawPhone.trim().replace(/[^\d+]/g, '');
+  let cleaned = rawPhone.trim().replace(/[^\d]/g, '');
   if (!cleaned) return null;
 
-  if (cleaned.startsWith('+')) {
+  // If starts with 0 (e.g. 09876543210 or landline 01140581389)
+  if (cleaned.startsWith('0')) {
     cleaned = cleaned.substring(1);
   }
 
-  if (cleaned.length === 10 && /^[6-9]/.test(cleaned)) {
-    cleaned = defaultCountry + cleaned;
-  } else if (cleaned.length === 11 && cleaned.startsWith('0')) {
-    cleaned = defaultCountry + cleaned.substring(1);
+  // If already prefixed with 91 (e.g. 919876543210)
+  if (cleaned.startsWith('91') && cleaned.length === 12) {
+    const mobilePart = cleaned.substring(2);
+    // WhatsApp requires a valid mobile number starting with 6, 7, 8, or 9
+    if (/^[6-9]\d{9}$/.test(mobilePart)) {
+      return `+${cleaned}`;
+    }
+    return null; // Exclude landlines like 911140581389 (Delhi landline)
   }
 
+  // If 10-digit standard Indian mobile number
+  if (cleaned.length === 10 && /^[6-9]\d{9}$/.test(cleaned)) {
+    return `+${defaultCountry}${cleaned}`;
+  }
+
+  // Generic international mobile validation (10 to 15 digits)
   if (cleaned.length >= 10 && cleaned.length <= 15) {
+    // If it's an Indian length (12 digits) but failed mobile prefix check, reject landline
+    if (cleaned.startsWith('91') && !/^[6-9]/.test(cleaned.substring(2))) {
+      return null;
+    }
     return `+${cleaned}`;
   }
 

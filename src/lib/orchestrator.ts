@@ -142,7 +142,9 @@ export async function runAutopilotPipeline(
         // Save to Database
         lead = await prisma.lead.create({
           data: {
-            campaignId: campaign.id,
+            campaign: {
+              connect: { id: campaign.id },
+            },
             placeId: raw.placeId,
             businessName: raw.businessName,
             category: raw.category || strategy.targetNiche,
@@ -151,6 +153,7 @@ export async function runAutopilotPipeline(
             phoneNumber: raw.phoneNumber,
             formattedPhone: raw.formattedPhone,
             websiteUrl: raw.websiteUrl,
+            email: audit.extractedEmail,
             googleRating: raw.googleRating,
             reviewCount: raw.reviewCount,
             googleMapsUrl: raw.googleMapsUrl,
@@ -172,10 +175,11 @@ export async function runAutopilotPipeline(
           },
         });
       } else {
-        // Update existing lead with latest audit & template
+        // Update existing lead with latest audit, email & template
         lead = await prisma.lead.update({
           where: { id: lead.id },
           data: {
+            email: audit.extractedEmail || lead.email,
             assignedTemplate: aiPitch.metaTemplateName,
             templateParameters: JSON.stringify(aiPitch.metaTemplateParameters),
             personalizedPitch: aiPitch.pitchText,

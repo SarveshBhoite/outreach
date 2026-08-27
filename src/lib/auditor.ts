@@ -10,6 +10,7 @@ export interface AuditResult {
   pitchCategory: 'WEB_APP_DEV' | 'ERP_CRM' | 'LOCAL_SEO_MARKETING' | 'GMB_RANKING';
   auditSummary: string;
   recommendations: string[];
+  extractedEmail?: string;
 }
 
 export async function auditDigitalFootprint(
@@ -47,8 +48,9 @@ export async function auditDigitalFootprint(
 
   let websiteWorking = false;
   let sslValid = targetUrl.startsWith('https://');
-  let isMobileFriendly = true; // Default true if working to avoid falsely downgrading to Web Dev
+  let isMobileFriendly = true;
   let pageSpeedScore: number | undefined = undefined;
+  let extractedEmail: string | undefined = undefined;
 
   try {
     const startTime = Date.now();
@@ -81,6 +83,53 @@ export async function auditDigitalFootprint(
         html.toLowerCase().includes('crisp') ||
         html.toLowerCase().includes('wati');
 
+      // ---------------------------------------------------------------------
+      // IN-FLIGHT EMAIL EXTRACTOR
+      // ---------------------------------------------------------------------
+      const foundEmails = new Set<string>();
+      const junkExtensions = ['.png', '.jpg', '.jpeg', '.webp', '.svg', '.gif', '.js', '.css'];
+
+      // 1. Mailto links
+      $('a[href^="mailto:"]').each((_, el) => {
+        const href = $(el).attr('href') || '';
+        const mail = href.replace(/^mailto:/i, '').split('?')[0].trim().toLowerCase();
+        if (mail && mail.includes('@') && !junkExtensions.some((ext) => mail.endsWith(ext))) {
+          foundEmails.add(mail);
+        }
+      });
+
+      // 2. Regex scan HTML text
+      const emailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/gi;
+      const matches = html.match(emailRegex);
+      if (matches) {
+        for (const m of matches) {
+          const cleanEmail = m.trim().toLowerCase();
+          if (
+            !junkExtensions.some((ext) => cleanEmail.endsWith(ext)) &&
+            !cleanEmail.includes('example.com') &&
+            !cleanEmail.includes('domain.com') &&
+            !cleanEmail.includes('sentry') &&
+            !cleanEmail.includes('wixpress') &&
+            !cleanEmail.includes('.png')
+          ) {
+            foundEmails.add(cleanEmail);
+          }
+        }
+      }
+
+      if (foundEmails.size > 0) {
+        const emailList = Array.from(foundEmails);
+        extractedEmail =
+          emailList.find(
+            (e) =>
+              e.includes('info@') ||
+              e.includes('contact@') ||
+              e.includes('hello@') ||
+              e.includes('sales@') ||
+              e.includes('gmail.com')
+          ) || emailList[0];
+      }
+
       // Speed estimate
       if (responseTimeMs < 1000) pageSpeedScore = 90;
       else if (responseTimeMs < 2500) pageSpeedScore = 75;
@@ -92,13 +141,6 @@ export async function auditDigitalFootprint(
 
       recommendations.push('Optimize Google Local 3-Pack rankings and review visibility');
 
-      // ---------------------------------------------------------------------
-      // PITCH CATEGORIZATION LOGIC:
-      // If the business ALREADY HAS a working website:
-      // -> If it lacks WhatsApp chat/CRM -> 'ERP_CRM'
-      // -> Otherwise -> 'LOCAL_SEO_MARKETING'
-      // *Never downgrade an active website to 'WEB_APP_DEV'*
-      // ---------------------------------------------------------------------
       let pitchCategory: 'WEB_APP_DEV' | 'ERP_CRM' | 'LOCAL_SEO_MARKETING' | 'GMB_RANKING' = 'LOCAL_SEO_MARKETING';
 
       if (!hasCrmOrChat) {
@@ -114,7 +156,10 @@ export async function auditDigitalFootprint(
         pageSpeedScore,
         sslValid,
         pitchCategory,
-        auditSummary: `Active website (${responseTimeMs}ms response). ${hasCrmOrChat ? 'Chat present.' : 'No automated WhatsApp CRM found.'}`,
+        extractedEmail,
+        auditSummary: `Active website (${responseTimeMs}ms response). ${
+          extractedEmail ? `Email detected (${extractedEmail}). ` : ''
+        }${hasCrmOrChat ? 'Chat present.' : 'No automated WhatsApp CRM found.'}`,
         recommendations,
       };
     }
