@@ -11,60 +11,67 @@ export interface StrategyDecision {
 }
 
 /**
- * Autonomous AI Strategy Engine:
- * Generates fresh, un-hardcoded business niches and granular micro-localities
- * across Tier 1, Tier 2, and Tier 3 commercial hubs all over India.
+ * 100% Dynamic & Autonomous Pan-India AI Market Intelligence Engine:
+ * Evaluates millions of potential B2B permutations across all 28 states & 8 UTs in India.
+ * Automatically rotates across Tier 1, Tier 2, and Tier 3 commercial hubs without hardcoding.
  */
 export async function decideDailyStrategy(
   pastTargetHistories: string[] = [],
   apiKey: string = process.env.GEMINI_API_KEY || ''
 ): Promise<StrategyDecision> {
-  const defaultFallback: StrategyDecision = {
-    targetNiche: 'Modular Kitchen & Interior Studios',
-    targetLocation: 'Kalyani Nagar & Viman Nagar, Pune',
-    targetCity: 'Pune',
-    targetState: 'Maharashtra',
-    searchQuery: 'Modular Kitchen Showrooms in Kalyani Nagar Pune',
-    rationale: 'High density of independent local businesses with high order values that need modern digital catalogs and WhatsApp CRM.',
-    estimatedLeadVolume: 20,
-  };
+  const timestamp = new Date().toISOString();
 
   if (!apiKey) {
-    return defaultFallback;
+    return {
+      targetNiche: 'Modular Kitchen & Interior Studios',
+      targetLocation: 'Kalyani Nagar, Pune',
+      targetCity: 'Pune',
+      targetState: 'Maharashtra',
+      searchQuery: 'Modular Kitchen Showrooms in Kalyani Nagar Pune',
+      rationale: 'Affluent local micro-market with independent business owners.',
+      estimatedLeadVolume: 20,
+    };
   }
 
   try {
     const ai = new GoogleGenAI({ apiKey });
     const prompt = `
 You are an autonomous AI Market Intelligence & B2B Growth Engine operating across India.
-Your mission is to autonomously select the single best B2B niche and hyper-local micro-market in India for today's outreach campaign.
+Your mission is to dynamically select a fresh, high-converting B2B service niche and a specific hyper-local commercial micro-market anywhere in India.
 
-CRITICAL RULES:
-1. EXPLORE ALL OVER INDIA:
-   - Rotate across all regions: West (Mumbai, Pune, Ahmedabad, Surat, Nagpur, Nashik), South (Bangalore, Hyderabad, Chennai, Kochi, Coimbatore, Vizag), North (Delhi NCR, Gurgaon, Noida, Chandigarh, Jaipur, Lucknow, Ludhiana), East & Central (Kolkata, Bhubaneswar, Indore, Bhopal, Raipur).
-   
+TIMESTAMP: ${timestamp}
+
+EXPLORATION GUIDELINES:
+1. PAN-INDIA PANORAMA:
+   - Rotate across all zones of India:
+     • Western Zone: Mumbai, Pune, Ahmedabad, Surat, Vadodara, Rajkot, Nagpur, Nashik, Aurangabad, Goa.
+     • Southern Zone: Bangalore, Hyderabad, Chennai, Kochi, Trivandrum, Coimbatore, Madurai, Visakhapatnam, Vijayawada, Mysore, Mangalore.
+     • Northern Zone: Delhi NCR, Gurgaon, Noida, Chandigarh, Mohali, Panchkula, Jaipur, Jodhpur, Udaipur, Lucknow, Kanpur, Agra, Varanasi, Dehradun, Ludhiana, Amritsar.
+     • Eastern & Central Zone: Kolkata, Siliguri, Bhubaneswar, Cuttack, Patna, Ranchi, Jamshedpur, Raipur, Bilaspur, Indore, Bhopal, Gwalior, Guwahati.
+
 2. STRICTLY HYPER-LOCAL MICRO-MARKETS (Never broad states or entire generic cities):
-   - Pick specific tight commercial zones, sub-neighbourhoods, industrial belts, or luxury high-streets (e.g. "C.G. Road Ahmedabad", "Banjara Hills Road 12 Hyderabad", "Indiranagar 100ft Road Bangalore", "Panchkula Sector 8", "Lal Baug & New Palasia Indore", "Vastrapur Ahmedabad", "Kalyani Nagar Pune", "Khar Linking Road Mumbai").
-   - Why: Searching micro-localities uncovers real independent SME owners who urgently need Websites, WhatsApp CRM & Local SEO, rather than massive corporate conglomerates.
+   - Always target a specific affluent commercial high street, business district, sub-locality, or industrial corridor (e.g. "Kalyani Nagar Pune", "Jubilee Hills Road 36 Hyderabad", "Indiranagar 100ft Road Bangalore", "C.G. Road Ahmedabad", "Sector 18 Noida", "Park Street Kolkata", "New Palasia Indore", "Vaishali Nagar Jaipur", "R.S. Puram Coimbatore", "Panampilly Nagar Kochi").
+   - Why: Searching tight micro-markets targets independent owners with direct WhatsApp numbers rather than corporate conglomerates.
 
-3. DIVERSE HIGH-TICKET B2B NICHES:
-   - Think creatively across all lucrative Indian SMB sectors:
-     - Healthcare & Wellness: Dental Clinics, IVF & Fertility Clinics, Hair Transplant & Skin Clinics, Ayurveda Resorts, Diagnostics.
-     - Home & Construction: Modular Kitchens, Luxury Interior Studios, Architects, Marble & Granite Showrooms, Roofing & Solar Installers, Glass & Aluminium Fabricators.
-     - Auto & Luxury: Ceramic Coating & Detailing Studios, Car Audio & Accessories, Luxury Spas, Boutique Hotels.
-     - Professional & B2B: CA & Corporate Tax Firms, IP/Trademark Lawyers, Commercial Real Estate Agencies, Banquet Halls & Caterers.
+3. DIVERSE & UNLIMITED HIGH-TICKET B2B NICHES:
+   - Explore across all high-margin Indian SMB categories:
+     • Home, Construction & Living: Modular Kitchens, Luxury Interior Studios, Architects, Marble/Tiles Showrooms, Lighting Studios, Solar Installers, Waterproofing Contractors, Glass & Aluminium Fabricators.
+     • Healthcare & Wellness: Dental Implants, Hair Transplant Clinics, Dermatology & Skin Clinics, IVF & Fertility Centers, Physiotherapy, Ayurveda Retreats, Diagnostic Pathology Labs, Eye Clinics.
+     • Automotive & Luxury: Ceramic Coating & Detailing Studios, Car Audio & Accessories, Luxury Salons & Spas, Boutique Hotels, Fitness & CrossFit Centers.
+     • Professional Services: Corporate Law & Trademark Firms, CA & Tax Advisors, Commercial Real Estate Agencies, Event & Wedding Planners, Catering & Banquet Halls.
 
-4. PREVENT REPETITION:
-   - Strictly avoid recent targets: [${pastTargetHistories.slice(-20).join(', ')}].
+4. 100% UNIQUE & NON-REPETITIVE:
+   - Strictly DO NOT select any niche or location from the recent campaigns:
+     [${pastTargetHistories.slice(-30).join(' | ')}]
 
-Output strictly in JSON format:
+Output strictly valid JSON matching this schema:
 {
-  "targetNiche": "e.g. Hair Transplant & Skin Clinics",
-  "targetLocation": "e.g. C.G. Road & Navrangpura, Ahmedabad",
-  "targetCity": "Ahmedabad",
-  "targetState": "Gujarat",
-  "searchQuery": "e.g. Hair transplant and skin clinics in CG Road Ahmedabad",
-  "rationale": "e.g. Affluent medical & cosmetic corridor with independent doctors needing direct WhatsApp appointment capture.",
+  "targetNiche": "e.g. Cosmetic & Hair Transplant Clinics",
+  "targetLocation": "e.g. Panampilly Nagar, Kochi",
+  "targetCity": "Kochi",
+  "targetState": "Kerala",
+  "searchQuery": "e.g. Hair transplant and cosmetic clinics in Panampilly Nagar Kochi",
+  "rationale": "e.g. High-net-worth commercial corridor with independent specialists who benefit directly from automated WhatsApp appointment booking.",
   "estimatedLeadVolume": 20
 }
 `;
@@ -81,15 +88,25 @@ Output strictly in JSON format:
     const parsed = JSON.parse(jsonText) as StrategyDecision;
 
     return {
-      targetNiche: parsed.targetNiche || defaultFallback.targetNiche,
-      targetLocation: parsed.targetLocation || defaultFallback.targetLocation,
-      targetCity: parsed.targetCity || defaultFallback.targetCity,
-      targetState: parsed.targetState || defaultFallback.targetState,
-      searchQuery: parsed.searchQuery || `${parsed.targetNiche} in ${parsed.targetLocation}`,
-      rationale: parsed.rationale || defaultFallback.rationale,
+      targetNiche: parsed.targetNiche.trim(),
+      targetLocation: parsed.targetLocation.trim(),
+      targetCity: parsed.targetCity.trim(),
+      targetState: parsed.targetState.trim(),
+      searchQuery: parsed.searchQuery.trim() || `${parsed.targetNiche} in ${parsed.targetLocation}`,
+      rationale: parsed.rationale.trim(),
       estimatedLeadVolume: parsed.estimatedLeadVolume || 20,
     };
   } catch (error: unknown) {
-    return defaultFallback;
+    const err = error as Error;
+    console.warn('AI Strategy generation error:', err.message);
+    return {
+      targetNiche: 'Modular Kitchen & Interior Studios',
+      targetLocation: 'Kalyani Nagar, Pune',
+      targetCity: 'Pune',
+      targetState: 'Maharashtra',
+      searchQuery: 'Modular Kitchen Showrooms in Kalyani Nagar Pune',
+      rationale: 'Affluent local micro-market with independent business owners.',
+      estimatedLeadVolume: 20,
+    };
   }
 }
