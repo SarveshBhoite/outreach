@@ -11,9 +11,10 @@ export async function GET() {
       settings = await prisma.appSettings.create({
         data: {
           id: 'global_settings',
-          autopilotEnabled: false,
-          dailyLeadLimit: 25,
-          activeWhatsAppProvider: 'META_CLOUD_API',
+          globalAutoDispatch: false,
+          globalScrapeLimit: 20,
+          crmApiUrl: 'https://crmapi.jisnudigital.com/api/v1/whatsapp/send-template',
+          crmApiKey: 'ak_live_bb3a202dc4c32629a10ebb3a2c3f86a4',
         },
       });
     }
@@ -31,23 +32,17 @@ export async function POST(request: Request) {
     const settings = await prisma.appSettings.upsert({
       where: { id: 'global_settings' },
       update: {
-        autopilotEnabled: body.autopilotEnabled,
-        dailyLeadLimit: body.dailyLeadLimit,
-        sendDelaySecondsMin: body.sendDelaySecondsMin,
-        sendDelaySecondsMax: body.sendDelaySecondsMax,
-        activeWhatsAppProvider: body.activeWhatsAppProvider,
-        customCrmUrl: body.customCrmUrl,
-        customCrmKey: body.customCrmKey,
+        globalAutoDispatch: body.globalAutoDispatch,
+        globalScrapeLimit: body.globalScrapeLimit ? parseInt(body.globalScrapeLimit, 10) : 20,
+        crmApiUrl: body.crmApiUrl,
+        crmApiKey: body.crmApiKey,
       },
       create: {
         id: 'global_settings',
-        autopilotEnabled: body.autopilotEnabled ?? false,
-        dailyLeadLimit: body.dailyLeadLimit ?? 25,
-        sendDelaySecondsMin: body.sendDelaySecondsMin ?? 30,
-        sendDelaySecondsMax: body.sendDelaySecondsMax ?? 90,
-        activeWhatsAppProvider: body.activeWhatsAppProvider ?? 'META_CLOUD_API',
-        customCrmUrl: body.customCrmUrl,
-        customCrmKey: body.customCrmKey,
+        globalAutoDispatch: body.globalAutoDispatch ?? false,
+        globalScrapeLimit: body.globalScrapeLimit ? parseInt(body.globalScrapeLimit, 10) : 20,
+        crmApiUrl: body.crmApiUrl || 'https://crmapi.jisnudigital.com/api/v1/whatsapp/send-template',
+        crmApiKey: body.crmApiKey || 'ak_live_bb3a202dc4c32629a10ebb3a2c3f86a4',
       },
     });
 

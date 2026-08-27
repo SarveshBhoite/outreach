@@ -26,43 +26,47 @@ model Campaign {
 }
 
 model Lead {
-  id              String         @id @default(cuid())
-  campaignId      String?
-  campaign        Campaign?      @relation(fields: [campaignId], references: [id], onDelete: SetNull)
-  placeId         String?        @unique
-  businessName    String
-  category        String?
-  address         String?
-  city            String?
-  state           String?
-  country         String?        @default("IN")
-  phoneNumber     String?
-  formattedPhone  String?        @unique
-  websiteUrl      String?
-  googleRating    Float?
-  reviewCount     Int?           @default(0)
-  googleMapsUrl   String?
+  id                String         @id @default(cuid())
+  campaignId        String?
+  campaign          Campaign?      @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  placeId           String?        @unique
+  businessName      String
+  category          String?
+  address           String?
+  city              String?
+  state             String?
+  country           String?        @default("IN")
+  phoneNumber       String?
+  formattedPhone    String?        @unique
+  websiteUrl        String?
+  googleRating      Float?
+  reviewCount       Int?           @default(0)
+  googleMapsUrl     String?
   
   // Digital Footprint & Audit
-  hasWebsite      Boolean        @default(false)
-  websiteWorking  Boolean        @default(false)
-  isMobileFriendly Boolean       @default(false)
-  pageSpeedScore  Int?
-  sslValid        Boolean        @default(false)
-  pitchCategory   String?        // "WEB_APP_DEV", "ERP_CRM", "LOCAL_SEO_MARKETING", "GMB_RANKING"
-  auditSummary    String?
+  hasWebsite        Boolean        @default(false)
+  websiteWorking    Boolean        @default(false)
+  isMobileFriendly  Boolean        @default(false)
+  pageSpeedScore    Int?
+  sslValid          Boolean        @default(false)
+  pitchCategory     String?        // "WEB_APP_DEV", "ERP_CRM", "LOCAL_SEO_MARKETING"
+  auditSummary      String?
   
-  // AI Pitch Copy
+  // Template & Pitch Copy
+  assignedTemplate  String?        // "universal_b2b_web_v2", "universal_b2b_crm_intro", "universal_b2b_seo_intro"
+  templateParameters String?      // JSON array of variables sent
   personalizedPitch String?
-  pitchAngle       String?
+  pitchAngle        String?
   
-  // Outreach Status
-  status          String         @default("DISCOVERED") // DISCOVERED, AUDITED, PITCH_GENERATED, QUEUED, SENT, DELIVERED, READ, REPLIED, CONVERTED, DO_NOT_CONTACT
+  // Outreach & Dispatch Status
+  isTemplateSent    Boolean        @default(false)
+  status            String         @default("DISCOVERED") // DISCOVERED, AUDITED, QUEUED, SENT, DELIVERED, READ, REPLIED, CONVERTED
   lastMessageSentAt DateTime?
+  lastError         String?
   
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  dispatchLogs    DispatchLog[]
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  dispatchLogs      DispatchLog[]
 }
 
 model DispatchLog {
@@ -71,7 +75,7 @@ model DispatchLog {
   lead            Lead           @relation(fields: [leadId], references: [id], onDelete: Cascade)
   campaignId      String?
   campaign        Campaign?      @relation(fields: [campaignId], references: [id], onDelete: SetNull)
-  provider        String         // "META_CLOUD_API" or "CUSTOM_CRM"
+  provider        String         @default("CRM_API_KEY") // "CRM_API_KEY" or "META_CLOUD_API"
   messageType     String         @default("TEMPLATE") // TEMPLATE, TEXT
   templateName    String?
   messageBody     String
@@ -84,14 +88,9 @@ model DispatchLog {
 
 model AppSettings {
   id                    String   @id @default("global_settings")
-  autopilotEnabled      Boolean  @default(false)
-  dailyLeadLimit        Int      @default(25)
-  sendDelaySecondsMin   Int      @default(30)
-  sendDelaySecondsMax   Int      @default(90)
-  activeWhatsAppProvider String  @default("META_CLOUD_API") // "META_CLOUD_API" or "CUSTOM_CRM"
-  customCrmUrl          String?
-  customCrmKey          String?
-  targetNichesJson      String   @default("[\"Dental Clinics\",\"Interior Designers\",\"Luxury Spas & Salons\",\"Real Estate Consultants\",\"Physiotherapy Centers\",\"Boutique Hotels\",\"Car Detailing & Garages\",\"Architects\",\"Roofing & Solar Contractors\",\"Dermatology & Skin Care\"]")
-  targetLocationsJson   String   @default("[\"South Mumbai\",\"Bandra Mumbai\",\"Andheri Mumbai\",\"Koregaon Park Pune\",\"Baner Pune\",\"Indiranagar Bangalore\",\"Koramangala Bangalore\",\"HSR Layout Bangalore\",\"Gurgaon Golf Course Road\",\"Jubilee Hills Hyderabad\"]")
+  globalAutoDispatch    Boolean  @default(false)
+  globalScrapeLimit     Int      @default(20)
+  crmApiUrl             String   @default("https://crmapi.jisnudigital.com/api/v1/whatsapp/send-template")
+  crmApiKey             String   @default("ak_live_bb3a202dc4c32629a10ebb3a2c3f86a4")
   updatedAt             DateTime @updatedAt
 }

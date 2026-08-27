@@ -4,9 +4,14 @@ import { runAutopilotPipeline } from '@/lib/orchestrator';
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({}));
-    const { customNiche, customLocation, autoDispatch } = body;
+    const { customNiche, customLocation, overrideAutoDispatch, overrideScrapeLimit } = body;
 
-    const result = await runAutopilotPipeline(customNiche, customLocation, Boolean(autoDispatch));
+    const result = await runAutopilotPipeline(
+      customNiche,
+      customLocation,
+      overrideAutoDispatch,
+      overrideScrapeLimit ? parseInt(overrideScrapeLimit, 10) : undefined
+    );
 
     return NextResponse.json({
       success: true,

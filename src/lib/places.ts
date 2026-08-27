@@ -16,23 +16,19 @@ export interface PlaceLead {
 
 export function normalizePhoneNumber(rawPhone?: string, defaultCountry = '91'): string | null {
   if (!rawPhone) return null;
-  // Remove all non-digits except leading +
   let cleaned = rawPhone.trim().replace(/[^\d+]/g, '');
   if (!cleaned) return null;
 
-  // If already starts with +, remove + to standardize
   if (cleaned.startsWith('+')) {
     cleaned = cleaned.substring(1);
   }
 
-  // Handle standard Indian 10-digit mobile numbers
   if (cleaned.length === 10 && /^[6-9]/.test(cleaned)) {
     cleaned = defaultCountry + cleaned;
   } else if (cleaned.length === 11 && cleaned.startsWith('0')) {
     cleaned = defaultCountry + cleaned.substring(1);
   }
 
-  // Validate E.164 numeric length (usually 10 to 15 digits)
   if (cleaned.length >= 10 && cleaned.length <= 15) {
     return `+${cleaned}`;
   }
@@ -40,8 +36,12 @@ export function normalizePhoneNumber(rawPhone?: string, defaultCountry = '91'): 
   return null;
 }
 
+/**
+ * Searches Google Places API with support for pagination (up to maxResults)
+ */
 export async function searchGooglePlaces(
   query: string,
+  maxResults: number = 20,
   apiKey: string = process.env.GOOGLE_PLACES_API_KEY || ''
 ): Promise<PlaceLead[]> {
   if (!apiKey) {
@@ -49,39 +49,54 @@ export async function searchGooglePlaces(
   }
 
   try {
-    // 1. Text Search to find place candidates
-    const searchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(
-      query
-    )}&key=${apiKey}`;
-    
-    const searchRes = await axios.get(searchUrl);
-    if (searchRes.data.status !== 'OK' && searchRes.data.status !== 'ZERO_RESULTS') {
-      console.warn(`Places Search status: ${searchRes.data.status} - ${searchRes.data.error_message || ''}`);
-    }
+    let allCandidates: any[] = [];
+    let nextPageToken: string | undefined = undefined;
 
-    const results = searchRes.data.results || [];
+    // Fetch pages as needed
+    do {
+      let searchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(
+        query
+      )}&key=${apiKey}`;
+
+      if (nextPageToken) {
+        searchUrl += `&pagetoken=${nextPageToken}`;
+        // Google requires a short delay before nextPageToken becomes active
+        await new Promise((r) => setTimeout(r, 2000));
+      }
+
+      const searchRes = await axios.get(searchUrl);
+      const results = searchRes.data.results || [];
+      allCandidates.push(...results);
+
+      nextPageToken = searchRes.data.next_page_token;
+
+      if (allCandidates.length >= maxResults || !nextPageToken) {
+        break;
+      }
+    } while (allCandidates.length < maxResults && nextPageToken);
+
+    // Limit to requested count
+    const targetCandidates = allCandidates.slice(0, maxResults);
     const leads: PlaceLead[] = [];
 
-    // 2. Fetch detailed profiles for up to top 20 candidates
-    for (const item of results.slice(0, 20)) {
+    for (const item of targetCandidates) {
       try {
         const placeId = item.place_id;
         const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,formatted_address,formatted_phone_number,international_phone_number,website,rating,user_ratings_total,url,types&key=${apiKey}`;
-        
+
         const detailRes = await axios.get(detailsUrl);
         const detail = detailRes.data.result || {};
 
         const rawPhone = detail.international_phone_number || detail.formatted_phone_number;
         const formattedPhone = normalizePhoneNumber(rawPhone);
 
-        // Parse category from types
         const types: string[] = detail.types || item.types || [];
-        const cleanCategory = types
-          .filter((t) => !['point_of_interest', 'establishment'].includes(t))
-          .map((t) => t.replace(/_/g, ' '))
-          .join(', ') || query;
+        const cleanCategory =
+          types
+            .filter((t) => !['point_of_interest', 'establishment'].includes(t))
+            .map((t) => t.replace(/_/g, ' '))
+            .join(', ') || query;
 
-        // Parse city from formatted address if available
         let city = '';
         const addressParts = (detail.formatted_address || item.formatted_address || '').split(',');
         if (addressParts.length > 2) {
@@ -99,7 +114,11 @@ export async function searchGooglePlaces(
           websiteUrl: detail.website || undefined,
           googleRating: detail.rating || item.rating || 0,
           reviewCount: detail.user_ratings_total || item.user_ratings_total || 0,
-          googleMapsUrl: detail.url || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(detail.name || item.name)}&query_place_id=${placeId}`,
+          googleMapsUrl:
+            detail.url ||
+            `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+              detail.name || item.name
+            )}&query_place_id=${placeId}`,
         });
       } catch (itemErr) {
         console.error(`Error fetching place detail for ${item.name}:`, itemErr);

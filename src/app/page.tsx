@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import {
   Zap,
   Play,
-  Pause,
   Send,
   Globe,
   Smartphone,
@@ -17,12 +16,14 @@ import {
   TrendingUp,
   MessageSquare,
   ShieldCheck,
-  ExternalLink,
   Building2,
   MapPin,
   Star,
   Activity,
   Layers,
+  KeyRound,
+  FileCheck,
+  Clock,
 } from 'lucide-react';
 
 interface Lead {
@@ -42,8 +43,11 @@ interface Lead {
   sslValid: boolean;
   pitchCategory: string;
   auditSummary: string;
+  assignedTemplate?: string;
+  templateParameters?: string;
   personalizedPitch: string;
   pitchAngle: string;
+  isTemplateSent: boolean;
   status: string;
   createdAt: string;
   campaign?: {
@@ -62,36 +66,33 @@ export default function OutreachDashboard() {
     totalLeads: 0,
     totalAudited: 0,
     totalSent: 0,
-    totalDelivered: 0,
-    totalReplied: 0,
+    totalPending: 0,
   });
 
-  // Autopilot Runner Inputs
-  const [customNiche, setCustomNiche] = useState('');
-  const [customLocation, setCustomLocation] = useState('');
-  const [autoDispatch, setAutoDispatch] = useState(false);
-  const [pipelineLogs, setPipelineLogs] = useState<string[]>([]);
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
-
-  // Quick Sandbox Test
-  const [testPhone, setTestPhone] = useState('');
-  const [testMessage, setTestMessage] = useState('Hello! This is a test verified outreach message from OutreachAI.');
-  const [testSending, setTestSending] = useState(false);
-  const [testResult, setTestResult] = useState<{ success?: boolean; message?: string } | null>(null);
-
-  // Settings
+  // Global Controls State
   const [settings, setSettings] = useState({
-    autopilotEnabled: false,
-    dailyLeadLimit: 25,
-    sendDelaySecondsMin: 30,
-    sendDelaySecondsMax: 90,
-    activeWhatsAppProvider: 'META_CLOUD_API',
-    customCrmUrl: '',
-    customCrmKey: '',
+    globalAutoDispatch: false,
+    globalScrapeLimit: 20,
+    crmApiUrl: 'https://crmapi.jisnudigital.com/api/v1/whatsapp/send-template',
+    crmApiKey: 'ak_live_bb3a202dc4c32629a10ebb3a2c3f86a4',
   });
   const [savingSettings, setSavingSettings] = useState(false);
 
-  // Fetch Leads & Stats
+  // Manual/Custom Trigger Inputs
+  const [customNiche, setCustomNiche] = useState('');
+  const [customLocation, setCustomLocation] = useState('');
+  const [customScrapeLimit, setCustomScrapeLimit] = useState<number>(20);
+  const [pipelineLogs, setPipelineLogs] = useState<string[]>([]);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [sendingSingleLead, setSendingSingleLead] = useState(false);
+
+  // Sandbox Test
+  const [testPhone, setTestPhone] = useState('9136870930');
+  const [testTemplate, setTestTemplate] = useState('universal_b2b_web_v2');
+  const [testSending, setTestSending] = useState(false);
+  const [testResult, setTestResult] = useState<{ success?: boolean; message?: string } | null>(null);
+
+  // Fetch Dashboard Data
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
@@ -99,7 +100,7 @@ export default function OutreachDashboard() {
       const data = await res.json();
       if (data.success) {
         setLeads(data.data.leads || []);
-        setStats(data.data.stats || { totalLeads: 0, totalAudited: 0, totalSent: 0, totalDelivered: 0, totalReplied: 0 });
+        setStats(data.data.stats || { totalLeads: 0, totalAudited: 0, totalSent: 0, totalPending: 0 });
       }
     } catch (err) {
       console.error('Failed to load dashboard data:', err);
@@ -115,6 +116,7 @@ export default function OutreachDashboard() {
       const data = await res.json();
       if (data.success && data.data) {
         setSettings(data.data);
+        setCustomScrapeLimit(data.data.globalScrapeLimit || 20);
       }
     } catch (err) {
       console.error('Failed to load settings:', err);
@@ -126,19 +128,38 @@ export default function OutreachDashboard() {
     fetchSettings();
   }, []);
 
-  // Trigger Autopilot
-  const handleTriggerAutopilot = async () => {
+  // Quick Toggle Global Auto-Dispatch Directly from Header
+  const handleToggleGlobalAutoDispatch = async (enabled: boolean) => {
+    const updated = { ...settings, globalAutoDispatch: enabled };
+    setSettings(updated);
+    try {
+      await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated),
+      });
+    } catch (err) {
+      console.error('Failed to update toggle:', err);
+    }
+  };
+
+  // Trigger Pipeline
+  const handleTriggerAutopilot = async (isManual: boolean = false) => {
     try {
       setRunningAutopilot(true);
-      setPipelineLogs([`[${new Date().toLocaleTimeString()}] 🚀 Triggering autonomous pipeline...`]);
+      setPipelineLogs([
+        `[${new Date().toLocaleTimeString()}] 🚀 Initiating ${isManual ? 'Custom Targeted' : 'Autonomous AI'} Discovery...`,
+        `[${new Date().toLocaleTimeString()}] ⚙️ Global Auto-Dispatch is ${settings.globalAutoDispatch ? '🟢 ON (Will send templates automatically)' : '⚪ OFF (Gather data only)'}`,
+      ]);
 
       const res = await fetch('/api/autopilot/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          customNiche: customNiche.trim() || undefined,
-          customLocation: customLocation.trim() || undefined,
-          autoDispatch: autoDispatch,
+          customNiche: isManual ? customNiche.trim() || undefined : undefined,
+          customLocation: isManual ? customLocation.trim() || undefined : undefined,
+          overrideScrapeLimit: customScrapeLimit,
+          overrideAutoDispatch: settings.globalAutoDispatch,
         }),
       });
 
@@ -157,7 +178,32 @@ export default function OutreachDashboard() {
     }
   };
 
-  // Quick Test Dispatch
+  // Send Template to Individual Lead (Lead CRM Table Modal)
+  const handleSendSingleTemplate = async (lead: Lead) => {
+    try {
+      setSendingSingleLead(true);
+      const res = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leadId: lead.id }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(data.message || `Template successfully sent to ${lead.businessName}!`);
+        setSelectedLead(null);
+        await fetchDashboardData();
+      } else {
+        alert(`Failed to send: ${data.error}`);
+      }
+    } catch (err: unknown) {
+      const e = err as Error;
+      alert(`Send Error: ${e.message}`);
+    } finally {
+      setSendingSingleLead(false);
+    }
+  };
+
+  // Quick Sandbox Test
   const handleSendTestMessage = async () => {
     if (!testPhone) return;
     try {
@@ -168,13 +214,12 @@ export default function OutreachDashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           phoneNumber: testPhone,
-          message: testMessage,
-          provider: settings.activeWhatsAppProvider,
+          templateName: testTemplate,
         }),
       });
       const data = await res.json();
       if (data.success) {
-        setTestResult({ success: true, message: `Message dispatched successfully! (ID: ${data.data?.messageId || 'OK'})` });
+        setTestResult({ success: true, message: `Template "${testTemplate}" dispatched & logged in CRM!` });
       } else {
         setTestResult({ success: false, message: data.error || 'Failed to dispatch test message.' });
       }
@@ -197,7 +242,7 @@ export default function OutreachDashboard() {
       });
       const data = await res.json();
       if (data.success) {
-        alert('Settings updated successfully!');
+        alert('Configuration saved successfully!');
       }
     } catch (err) {
       console.error('Error saving settings:', err);
@@ -208,8 +253,8 @@ export default function OutreachDashboard() {
 
   return (
     <div className="flex h-screen bg-slate-950 text-slate-100 overflow-hidden font-sans">
-      {/* Sidebar Navigation */}
-      <aside className="w-64 border-r border-slate-800 bg-slate-900/60 backdrop-blur-md flex flex-col justify-between p-4">
+      {/* Sidebar */}
+      <aside className="w-64 border-r border-slate-800 bg-slate-900/70 backdrop-blur-md flex flex-col justify-between p-4">
         <div>
           <div className="flex items-center gap-3 px-2 py-3 mb-6">
             <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-500/20">
@@ -217,9 +262,9 @@ export default function OutreachDashboard() {
             </div>
             <div>
               <h1 className="text-lg font-bold tracking-tight text-white flex items-center gap-1.5">
-                OutreachAI <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/30">PRO</span>
+                OutreachAI <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/30">CRM</span>
               </h1>
-              <p className="text-xs text-slate-400">B2B Autopilot Engine</p>
+              <p className="text-xs text-slate-400">JISNU Outreach Engine</p>
             </div>
           </div>
 
@@ -274,48 +319,65 @@ export default function OutreachDashboard() {
               }`}
             >
               <Sliders className="h-4 w-4" />
-              Settings & Provider
+              Settings & CRM Gateway
             </button>
           </nav>
         </div>
 
-        {/* Status Widget */}
-        <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 text-xs space-y-2">
-          <div className="flex items-center justify-between text-slate-400">
-            <span>WhatsApp Engine</span>
-            <span className="flex items-center gap-1 text-emerald-400 font-semibold">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              Meta Active
+        {/* Global Dispatch Status Card */}
+        <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 text-xs space-y-2.5">
+          <div className="flex items-center justify-between">
+            <span className="text-slate-400 font-medium">Auto-Dispatch</span>
+            <span className={`font-bold px-2 py-0.5 rounded text-[10px] ${settings.globalAutoDispatch ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'}`}>
+              {settings.globalAutoDispatch ? 'ACTIVE' : 'OFF'}
             </span>
           </div>
           <div className="flex items-center justify-between text-slate-400">
-            <span>Database</span>
-            <span className="text-slate-300 font-medium">Neon Postgres</span>
+            <span>CRM Sync</span>
+            <span className="text-emerald-400 font-semibold flex items-center gap-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              Live API
+            </span>
           </div>
           <div className="flex items-center justify-between text-slate-400">
-            <span>Places API</span>
-            <span className="text-slate-300 font-medium">Verified</span>
+            <span>Scrape Batch</span>
+            <span className="text-slate-300 font-mono font-medium">{settings.globalScrapeLimit} Leads</span>
           </div>
         </div>
       </aside>
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col overflow-y-auto bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
-        {/* Top App Header */}
-        <header className="h-16 border-b border-slate-800 px-6 flex items-center justify-between bg-slate-900/40 backdrop-blur-md sticky top-0 z-10">
+        {/* Top App Header with Global Auto-Dispatch Switch */}
+        <header className="h-16 border-b border-slate-800 px-6 flex items-center justify-between bg-slate-900/50 backdrop-blur-md sticky top-0 z-10">
           <div>
             <h2 className="text-base font-semibold text-white capitalize">
               {activeTab === 'overview' && 'Autonomous Command Center'}
               {activeTab === 'leads' && 'Qualified Business Leads & Digital Audits'}
               {activeTab === 'sandbox' && 'WhatsApp Dispatch Sandbox'}
-              {activeTab === 'settings' && 'System Configuration & Provider Keys'}
+              {activeTab === 'settings' && 'System Configuration & CRM API Gateway'}
             </h2>
             <p className="text-xs text-slate-400">
-              AI Market Selection • Google Places Scraping • Digital Footprint Audit • Meta WhatsApp
+              AI Market Selection • Google Places Scraper • Digital Audit • Meta CRM Dispatch
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
+            {/* Global Auto Dispatch Switch */}
+            <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg shadow-sm">
+              <input
+                type="checkbox"
+                id="globalAutoDispatchHeader"
+                checked={settings.globalAutoDispatch}
+                onChange={(e) => handleToggleGlobalAutoDispatch(e.target.checked)}
+                className="h-4 w-4 rounded border-slate-700 bg-slate-950 text-emerald-500 focus:ring-emerald-400 cursor-pointer"
+              />
+              <label htmlFor="globalAutoDispatchHeader" className="text-xs font-semibold text-slate-200 cursor-pointer flex items-center gap-1.5">
+                <Send className="h-3 w-3 text-emerald-400" />
+                Global Auto-Dispatch
+              </label>
+            </div>
+
             <button
               onClick={fetchDashboardData}
               disabled={loading}
@@ -326,7 +388,7 @@ export default function OutreachDashboard() {
             </button>
 
             <button
-              onClick={handleTriggerAutopilot}
+              onClick={() => handleTriggerAutopilot(false)}
               disabled={runningAutopilot}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition shadow-lg ${
                 runningAutopilot
@@ -352,7 +414,7 @@ export default function OutreachDashboard() {
         {/* Tab 1: Overview / Command Center */}
         {activeTab === 'overview' && (
           <div className="p-6 space-y-6">
-            {/* Metric Cards */}
+            {/* Stat Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 shadow-sm relative overflow-hidden">
                 <div className="flex items-center justify-between">
@@ -369,29 +431,29 @@ export default function OutreachDashboard() {
                   <Globe className="h-4 w-4 text-teal-400" />
                 </div>
                 <div className="text-2xl font-bold text-white mt-2">{stats.totalAudited}</div>
-                <div className="text-[11px] text-slate-500 mt-1">Web, SSL, & SEO analyzed</div>
+                <div className="text-[11px] text-slate-500 mt-1">Web & CRM footprint analyzed</div>
               </div>
 
               <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 shadow-sm relative overflow-hidden">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-slate-400">WhatsApp Pitches Sent</span>
+                  <span className="text-xs font-medium text-slate-400">Templates Dispatched</span>
                   <Send className="h-4 w-4 text-sky-400" />
                 </div>
                 <div className="text-2xl font-bold text-white mt-2">{stats.totalSent}</div>
-                <div className="text-[11px] text-slate-500 mt-1">Dispatched via Meta Cloud API</div>
+                <div className="text-[11px] text-slate-500 mt-1">Logged in CRM Chat History</div>
               </div>
 
               <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 shadow-sm relative overflow-hidden">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-slate-400">Active Responses</span>
-                  <TrendingUp className="h-4 w-4 text-purple-400" />
+                  <span className="text-xs font-medium text-slate-400">Pending Send (In CRM)</span>
+                  <Clock className="h-4 w-4 text-amber-400" />
                 </div>
-                <div className="text-2xl font-bold text-white mt-2">{stats.totalReplied}</div>
-                <div className="text-[11px] text-slate-500 mt-1">Interested business owners</div>
+                <div className="text-2xl font-bold text-white mt-2">{stats.totalPending}</div>
+                <div className="text-[11px] text-slate-500 mt-1">Audited & Ready for 1-Click Send</div>
               </div>
             </div>
 
-            {/* Two Column Layout: Run Controller & Live Logs */}
+            {/* Run Controller & Realtime Activity Logs */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               {/* Left Column: Targeted Run Controller */}
               <div className="lg:col-span-5 space-y-4">
@@ -401,15 +463,15 @@ export default function OutreachDashboard() {
                     <h3 className="text-sm font-semibold text-white">Manual / Custom Campaign Trigger</h3>
                   </div>
                   <p className="text-xs text-slate-400 leading-relaxed">
-                    Leave blank to let the <strong>AI Strategy Engine</strong> autonomously choose today&apos;s most lucrative niche & location, or specify your own target below:
+                    Target a specific business niche & micro-locality (or click <strong>Launch Daily Autopilot</strong> to let AI discover a new Pan-India market).
                   </p>
 
-                  <div className="space-y-3 pt-2">
+                  <div className="space-y-3 pt-1">
                     <div>
-                      <label className="text-xs font-medium text-slate-300 block mb-1">Target Niche / Category (Optional)</label>
+                      <label className="text-xs font-medium text-slate-300 block mb-1">Target Niche / Category</label>
                       <input
                         type="text"
-                        placeholder="e.g. Dental Clinics, Luxury Interior Designers"
+                        placeholder="e.g. Modular Kitchen Showrooms, Cosmetic Clinics"
                         value={customNiche}
                         onChange={(e) => setCustomNiche(e.target.value)}
                         className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-emerald-500"
@@ -417,61 +479,46 @@ export default function OutreachDashboard() {
                     </div>
 
                     <div>
-                      <label className="text-xs font-medium text-slate-300 block mb-1">Target City / Area (Optional)</label>
+                      <label className="text-xs font-medium text-slate-300 block mb-1">Target Micro-Locality / Area</label>
                       <input
                         type="text"
-                        placeholder="e.g. Bandra Mumbai, Indiranagar Bangalore"
+                        placeholder="e.g. Lokhandwala Andheri West, Kalyani Nagar Pune"
                         value={customLocation}
                         onChange={(e) => setCustomLocation(e.target.value)}
                         className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-emerald-500"
                       />
                     </div>
 
-                    <div className="flex items-center gap-3 pt-1">
+                    <div>
+                      <label className="text-xs font-medium text-slate-300 block mb-1">Max Leads to Scrape (Lead Count Limit)</label>
                       <input
-                        type="checkbox"
-                        id="autoDispatch"
-                        checked={autoDispatch}
-                        onChange={(e) => setAutoDispatch(e.target.checked)}
-                        className="h-4 w-4 rounded border-slate-700 bg-slate-900 text-emerald-500 focus:ring-emerald-400"
+                        type="number"
+                        value={customScrapeLimit}
+                        onChange={(e) => setCustomScrapeLimit(parseInt(e.target.value, 10) || 20)}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 font-mono focus:outline-none focus:border-emerald-500"
                       />
-                      <label htmlFor="autoDispatch" className="text-xs text-slate-300 cursor-pointer">
-                        Auto-dispatch WhatsApp pitches immediately upon audit
-                      </label>
+                    </div>
+
+                    <div className="p-3 bg-slate-950 rounded-xl border border-slate-800/80 flex items-center justify-between">
+                      <div className="text-xs text-slate-300">
+                        <span className="font-semibold block">Auto-Dispatch Templates:</span>
+                        <span className="text-[11px] text-slate-500">
+                          {settings.globalAutoDispatch ? '🟢 Templates will be sent via CRM immediately' : '⚪ Leads will only be saved in table (zero sends)'}
+                        </span>
+                      </div>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${settings.globalAutoDispatch ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400'}`}>
+                        {settings.globalAutoDispatch ? 'ON' : 'OFF'}
+                      </span>
                     </div>
 
                     <button
-                      onClick={handleTriggerAutopilot}
+                      onClick={() => handleTriggerAutopilot(true)}
                       disabled={runningAutopilot}
                       className="w-full mt-2 py-2.5 px-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold rounded-lg text-sm transition flex items-center justify-center gap-2"
                     >
                       {runningAutopilot ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
                       Execute Target Discovery
                     </button>
-                  </div>
-                </div>
-
-                {/* Workflow Architecture Snapshot */}
-                <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2.5 text-xs text-slate-300">
-                  <div className="font-semibold text-slate-200 flex items-center gap-2">
-                    <ShieldCheck className="h-4 w-4 text-emerald-400" />
-                    How The Pipeline Works
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <span className="bg-slate-800 text-emerald-400 rounded-full h-4 w-4 flex items-center justify-center text-[10px] font-bold">1</span>
-                    <span><strong>AI Strategy</strong> picks high-ticket niches & affluent geographic areas.</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <span className="bg-slate-800 text-emerald-400 rounded-full h-4 w-4 flex items-center justify-center text-[10px] font-bold">2</span>
-                    <span><strong>Google Places API</strong> extracts verified phone numbers, websites, & reviews.</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <span className="bg-slate-800 text-emerald-400 rounded-full h-4 w-4 flex items-center justify-center text-[10px] font-bold">3</span>
-                    <span><strong>Footprint Auditor</strong> checks SSL, speed, and whether to pitch Web/App vs SEO/CRM.</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <span className="bg-slate-800 text-emerald-400 rounded-full h-4 w-4 flex items-center justify-center text-[10px] font-bold">4</span>
-                    <span><strong>Gemini AI</strong> generates bespoke pitch copy and sends via <strong>Meta WhatsApp Cloud API</strong>.</span>
                   </div>
                 </div>
               </div>
@@ -511,8 +558,10 @@ export default function OutreachDashboard() {
           <div className="p-6 space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-semibold text-white">Discovered Business Leads</h3>
-                <p className="text-xs text-slate-400">Click on any business to inspect their digital footprint audit and generated pitch.</p>
+                <h3 className="text-sm font-semibold text-white">Qualified Business Leads</h3>
+                <p className="text-xs text-slate-400">
+                  Inspect digital audit diagnosis, view the assigned Meta template, and dispatch 1-click pitches.
+                </p>
               </div>
               <span className="text-xs text-slate-400 font-mono">Showing {leads.length} records</span>
             </div>
@@ -523,12 +572,12 @@ export default function OutreachDashboard() {
                   <thead className="bg-slate-950/80 text-slate-400 border-b border-slate-800 uppercase tracking-wider font-semibold">
                     <tr>
                       <th className="px-4 py-3">Business Name</th>
-                      <th className="px-4 py-3">Niche / Category</th>
+                      <th className="px-4 py-3">Niche</th>
                       <th className="px-4 py-3">Location</th>
-                      <th className="px-4 py-3">WhatsApp / Phone</th>
-                      <th className="px-4 py-3">Website Status</th>
-                      <th className="px-4 py-3">Pitch Angle</th>
-                      <th className="px-4 py-3">Outreach Status</th>
+                      <th className="px-4 py-3">Phone (WhatsApp)</th>
+                      <th className="px-4 py-3">Website</th>
+                      <th className="px-4 py-3">Assigned Meta Template</th>
+                      <th className="px-4 py-3">Template Sent?</th>
                       <th className="px-4 py-3 text-right">Action</th>
                     </tr>
                   </thead>
@@ -555,37 +604,35 @@ export default function OutreachDashboard() {
                               </span>
                             )}
                           </td>
-                          <td className="px-4 py-3 text-slate-400 truncate max-w-[140px]">{lead.category}</td>
-                          <td className="px-4 py-3 text-slate-400">{lead.city || 'India'}</td>
+                          <td className="px-4 py-3 text-slate-400 truncate max-w-[130px]">{lead.category}</td>
+                          <td className="px-4 py-3 text-slate-400 truncate max-w-[120px]">{lead.city || 'India'}</td>
                           <td className="px-4 py-3 font-mono text-emerald-400">{lead.formattedPhone || lead.phoneNumber || 'N/A'}</td>
                           <td className="px-4 py-3">
                             {lead.hasWebsite ? (
                               <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                                <Globe className="h-3 w-3" /> Active Site
+                                <Globe className="h-3 w-3" /> Active
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 text-[11px] text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20">
-                                <AlertTriangle className="h-3 w-3" /> No Website
+                                <AlertTriangle className="h-3 w-3" /> None
                               </span>
                             )}
                           </td>
                           <td className="px-4 py-3">
-                            <span className="text-[11px] text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
-                              {lead.pitchAngle || lead.pitchCategory}
+                            <span className="text-[11px] font-mono text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+                              {lead.assignedTemplate || 'universal_b2b_web_v2'}
                             </span>
                           </td>
                           <td className="px-4 py-3">
-                            <span
-                              className={`text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full ${
-                                lead.status === 'SENT'
-                                  ? 'bg-sky-500/20 text-sky-400 border border-sky-500/30'
-                                  : lead.status === 'REPLIED'
-                                  ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                                  : 'bg-slate-800 text-slate-400 border border-slate-700'
-                              }`}
-                            >
-                              {lead.status}
-                            </span>
+                            {lead.isTemplateSent ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                                <CheckCircle2 className="h-3 w-3" /> SENT (IN CRM)
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-400 bg-slate-800 px-2 py-0.5 rounded-full border border-slate-700">
+                                <Clock className="h-3 w-3" /> PENDING
+                              </span>
+                            )}
                           </td>
                           <td className="px-4 py-3 text-right">
                             <button
@@ -608,7 +655,7 @@ export default function OutreachDashboard() {
           </div>
         )}
 
-        {/* Tab 3: WhatsApp Sandbox Test */}
+        {/* Tab 3: WhatsApp Sandbox */}
         {activeTab === 'sandbox' && (
           <div className="p-6 max-w-2xl mx-auto space-y-6">
             <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
@@ -619,7 +666,7 @@ export default function OutreachDashboard() {
                 <div>
                   <h3 className="text-sm font-semibold text-white">Live WhatsApp Message Tester</h3>
                   <p className="text-xs text-slate-400">
-                    Send a test template or message directly to your own verified WhatsApp phone number.
+                    Send a test template directly to your own verified WhatsApp phone number via CRM API Gateway.
                   </p>
                 </div>
               </div>
@@ -627,11 +674,11 @@ export default function OutreachDashboard() {
               <div className="space-y-3 pt-2">
                 <div>
                   <label className="text-xs font-medium text-slate-300 block mb-1">
-                    Recipient Phone Number (with or without +91)
+                    Recipient Phone Number (with country code)
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. 9876543210 or +919876543210"
+                    placeholder="e.g. 9136870930 or 919136870930"
                     value={testPhone}
                     onChange={(e) => setTestPhone(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-emerald-500 font-mono"
@@ -639,13 +686,16 @@ export default function OutreachDashboard() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-medium text-slate-300 block mb-1">Message Body</label>
-                  <textarea
-                    rows={4}
-                    value={testMessage}
-                    onChange={(e) => setTestMessage(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-emerald-500"
-                  />
+                  <label className="text-xs font-medium text-slate-300 block mb-1">Template to Send</label>
+                  <select
+                    value={testTemplate}
+                    onChange={(e) => setTestTemplate(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 font-mono"
+                  >
+                    <option value="universal_b2b_web_v2">universal_b2b_web_v2 (Web & App Development)</option>
+                    <option value="universal_b2b_crm_intro">universal_b2b_crm_intro (WhatsApp CRM & ERP)</option>
+                    <option value="universal_b2b_seo_intro">universal_b2b_seo_intro (Google 3-Pack & SEO)</option>
+                  </select>
                 </div>
 
                 {testResult && (
@@ -666,95 +716,75 @@ export default function OutreachDashboard() {
                   className="w-full py-2.5 px-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold rounded-lg text-sm transition flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {testSending ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                  Dispatch Test WhatsApp Message
+                  Dispatch Test WhatsApp Template via CRM
                 </button>
               </div>
             </div>
           </div>
         )}
 
-        {/* Tab 4: Settings & Provider Configuration */}
+        {/* Tab 4: Settings */}
         {activeTab === 'settings' && (
           <div className="p-6 max-w-3xl mx-auto space-y-6">
             <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-5">
               <div className="flex items-center gap-3 pb-3 border-b border-slate-800">
-                <Sliders className="h-5 w-5 text-emerald-400" />
+                <KeyRound className="h-5 w-5 text-emerald-400" />
                 <div>
-                  <h3 className="text-sm font-semibold text-white">System Settings & Provider Switching</h3>
-                  <p className="text-xs text-slate-400">Configure your daily limits, delays, and custom CRM integration.</p>
+                  <h3 className="text-sm font-semibold text-white">JISNU CRM Gateway & Global Automation Settings</h3>
+                  <p className="text-xs text-slate-400">All outbound outreach templates are routed and logged into your CRM chat history.</p>
                 </div>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1.5">
-                    Active WhatsApp Dispatch Provider
+                  <label className="text-xs font-semibold text-slate-300 block mb-1">
+                    JISNU CRM API Gateway URL
                   </label>
-                  <select
-                    value={settings.activeWhatsAppProvider}
-                    onChange={(e) => setSettings({ ...settings, activeWhatsAppProvider: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
-                  >
-                    <option value="META_CLOUD_API">Official Meta WhatsApp Cloud API (Connected & Verified)</option>
-                    <option value="CUSTOM_CRM">Custom External CRM API / Webhook</option>
-                  </select>
+                  <input
+                    type="text"
+                    value={settings.crmApiUrl}
+                    onChange={(e) => setSettings({ ...settings, crmApiUrl: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 font-mono"
+                  />
                 </div>
 
-                {settings.activeWhatsAppProvider === 'CUSTOM_CRM' && (
-                  <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
-                    <h4 className="text-xs font-semibold text-indigo-400">Custom CRM API Credentials</h4>
-                    <div>
-                      <label className="text-[11px] text-slate-400 block mb-1">CRM WhatsApp Endpoint URL</label>
-                      <input
-                        type="text"
-                        placeholder="https://your-crm.com/api/v1/whatsapp/send"
-                        value={settings.customCrmUrl || ''}
-                        onChange={(e) => setSettings({ ...settings, customCrmUrl: e.target.value })}
-                        className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 font-mono"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[11px] text-slate-400 block mb-1">CRM API Key</label>
-                      <input
-                        type="password"
-                        placeholder="crm_secret_key_..."
-                        value={settings.customCrmKey || ''}
-                        onChange={(e) => setSettings({ ...settings, customCrmKey: e.target.value })}
-                        className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 font-mono"
-                      />
-                    </div>
-                  </div>
-                )}
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1">
+                    JISNU CRM API Secret Key
+                  </label>
+                  <input
+                    type="password"
+                    value={settings.crmApiKey}
+                    onChange={(e) => setSettings({ ...settings, crmApiKey: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 font-mono"
+                  />
+                </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs font-medium text-slate-300 block mb-1">Daily Max Leads Limit</label>
+                <div className="grid grid-cols-2 gap-4 pt-2">
+                  <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                    <label className="text-xs font-bold text-slate-200 block">Default Scrape Lead Limit</label>
                     <input
                       type="number"
-                      value={settings.dailyLeadLimit}
-                      onChange={(e) => setSettings({ ...settings, dailyLeadLimit: parseInt(e.target.value) || 25 })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200"
+                      value={settings.globalScrapeLimit}
+                      onChange={(e) => setSettings({ ...settings, globalScrapeLimit: parseInt(e.target.value, 10) || 20 })}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 font-mono"
                     />
+                    <p className="text-[10px] text-slate-500">Number of businesses Google Places scrapes per run.</p>
                   </div>
 
-                  <div>
-                    <label className="text-xs font-medium text-slate-300 block mb-1">Delay Between Messages (Seconds)</label>
-                    <div className="flex items-center gap-2">
+                  <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                    <label className="text-xs font-bold text-slate-200 block">Global Auto-Dispatch Switch</label>
+                    <div className="flex items-center gap-3 pt-1">
                       <input
-                        type="number"
-                        placeholder="Min (30)"
-                        value={settings.sendDelaySecondsMin}
-                        onChange={(e) => setSettings({ ...settings, sendDelaySecondsMin: parseInt(e.target.value) || 30 })}
-                        className="w-1/2 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200"
+                        type="checkbox"
+                        id="globalAutoDispatchSettings"
+                        checked={settings.globalAutoDispatch}
+                        onChange={(e) => setSettings({ ...settings, globalAutoDispatch: e.target.checked })}
+                        className="h-4 w-4 rounded border-slate-700 bg-slate-900 text-emerald-500 focus:ring-emerald-400 cursor-pointer"
                       />
-                      <span className="text-xs text-slate-500">to</span>
-                      <input
-                        type="number"
-                        placeholder="Max (90)"
-                        value={settings.sendDelaySecondsMax}
-                        onChange={(e) => setSettings({ ...settings, sendDelaySecondsMax: parseInt(e.target.value) || 90 })}
-                        className="w-1/2 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200"
-                      />
+                      <label htmlFor="globalAutoDispatchSettings" className="text-xs text-slate-300 cursor-pointer">
+                        {settings.globalAutoDispatch ? '🟢 Automatically send templates' : '⚪ Gather data only'}
+                      </label>
                     </div>
                   </div>
                 </div>
@@ -798,29 +828,39 @@ export default function OutreachDashboard() {
                 </button>
               </div>
 
-              {/* Digital Audit Card */}
-              <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2 text-xs">
-                <div className="font-semibold text-slate-300 flex items-center gap-1.5">
-                  <Globe className="h-3.5 w-3.5 text-teal-400" /> Digital Footprint Audit:
+              {/* Assigned Meta Template Card */}
+              <div className="p-3.5 rounded-xl bg-indigo-950/20 border border-indigo-500/30 space-y-2 text-xs">
+                <div className="font-semibold text-indigo-400 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <FileCheck className="h-3.5 w-3.5" /> Assigned Meta Template To Send:
+                  </span>
+                  <span className="font-mono bg-indigo-900/60 px-2 py-0.5 rounded text-[11px] text-indigo-200">
+                    {selectedLead.assignedTemplate || 'universal_b2b_web_v2'}
+                  </span>
                 </div>
-                <p className="text-slate-400 leading-relaxed">{selectedLead.auditSummary}</p>
-                <div className="flex gap-2 pt-1">
-                  <span className="bg-slate-900 text-slate-300 px-2 py-0.5 rounded text-[11px]">
-                    Website: {selectedLead.hasWebsite ? 'Yes' : 'None'}
-                  </span>
-                  <span className="bg-slate-900 text-slate-300 px-2 py-0.5 rounded text-[11px]">
-                    Pitch Bucket: {selectedLead.pitchAngle || selectedLead.pitchCategory}
-                  </span>
+                <div className="text-slate-300 text-[11px]">
+                  <strong>Pitch Strategy:</strong> {selectedLead.pitchAngle || selectedLead.pitchCategory}
+                </div>
+                <div className="text-slate-400 text-[10px]">
+                  <strong>Status:</strong> {selectedLead.isTemplateSent ? '✅ Template already sent to lead' : '⏳ Pending send (1-click send available below)'}
                 </div>
               </div>
 
-              {/* AI Pitch Message Preview */}
-              <div className="p-3.5 rounded-xl bg-emerald-950/20 border border-emerald-500/30 space-y-2 text-xs">
-                <div className="font-semibold text-emerald-400 flex items-center gap-1.5">
-                  <MessageSquare className="h-3.5 w-3.5" /> Generated WhatsApp Pitch Copy:
+              {/* Digital Audit Card */}
+              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5 text-xs">
+                <div className="font-semibold text-slate-300 flex items-center gap-1.5">
+                  <Globe className="h-3.5 w-3.5 text-teal-400" /> Digital Footprint Audit:
                 </div>
-                <div className="text-slate-200 whitespace-pre-line bg-slate-950/80 p-3 rounded-lg border border-slate-800 font-sans text-xs leading-relaxed">
-                  {selectedLead.personalizedPitch || 'No pitch copy generated yet.'}
+                <p className="text-slate-400 leading-relaxed text-[11px]">{selectedLead.auditSummary}</p>
+              </div>
+
+              {/* Generated Custom Pitch Script (For Sales Reps) */}
+              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5 text-xs">
+                <div className="font-semibold text-emerald-400 flex items-center gap-1.5">
+                  <MessageSquare className="h-3.5 w-3.5" /> Tailored Pitch Script (For Sales Follow-up):
+                </div>
+                <div className="text-slate-300 whitespace-pre-line bg-slate-900/90 p-2.5 rounded-lg border border-slate-800 font-sans text-xs leading-relaxed max-h-36 overflow-y-auto">
+                  {selectedLead.personalizedPitch || 'No pitch copy generated.'}
                 </div>
               </div>
 
@@ -832,25 +872,27 @@ export default function OutreachDashboard() {
                   Close
                 </button>
                 <button
-                  onClick={async () => {
-                    if (selectedLead.formattedPhone) {
-                      await fetch('/api/whatsapp/test', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          phoneNumber: selectedLead.formattedPhone,
-                          message: selectedLead.personalizedPitch,
-                          provider: settings.activeWhatsAppProvider,
-                        }),
-                      });
-                      alert(`Message dispatched to ${selectedLead.businessName}!`);
-                      setSelectedLead(null);
-                      fetchDashboardData();
-                    }
-                  }}
-                  className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-lg text-xs font-bold flex items-center gap-1.5"
+                  onClick={() => handleSendSingleTemplate(selectedLead)}
+                  disabled={sendingSingleLead || selectedLead.isTemplateSent}
+                  className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 ${
+                    selectedLead.isTemplateSent
+                      ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                      : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950'
+                  }`}
                 >
-                  <Send className="h-3.5 w-3.5" /> Send Pitch Now
+                  {sendingSingleLead ? (
+                    <>
+                      <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Dispatching...
+                    </>
+                  ) : selectedLead.isTemplateSent ? (
+                    <>
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Template Sent
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-3.5 w-3.5" /> Send Template via CRM
+                    </>
+                  )}
                 </button>
               </div>
             </div>

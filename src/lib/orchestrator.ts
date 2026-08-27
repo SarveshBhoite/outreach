@@ -11,54 +11,83 @@ export interface PipelineRunResult {
   targetLocation: string;
   totalFound: number;
   totalAudited: number;
-  totalQueued: number;
-  leads: unknown[];
+  totalSent: number;
+  leads: any[];
   logs: string[];
 }
 
 export async function runAutopilotPipeline(
   customNiche?: string,
   customLocation?: string,
-  autoDispatch: boolean = false
+  overrideAutoDispatch?: boolean,
+  overrideScrapeLimit?: number
 ): Promise<PipelineRunResult> {
   const logs: string[] = [];
-  logs.push(`[${new Date().toLocaleTimeString()}] 🚀 Initiating Autonomous Outreach Pipeline...`);
+  logs.push(`[${new Date().toLocaleTimeString()}] 🚀 Initiating Outreach Pipeline...`);
 
-  // 1. Fetch Past Campaigns to prevent duplicate targeting
+  // 1. Fetch Global App Settings
+  let settings = await prisma.appSettings.findUnique({
+    where: { id: 'global_settings' },
+  });
+
+  if (!settings) {
+    settings = await prisma.appSettings.create({
+      data: {
+        id: 'global_settings',
+        globalAutoDispatch: false,
+        globalScrapeLimit: 20,
+        crmApiUrl: 'https://crmapi.jisnudigital.com/api/v1/whatsapp/send-template',
+        crmApiKey: 'ak_live_bb3a202dc4c32629a10ebb3a2c3f86a4',
+      },
+    });
+  }
+
+  // Determine whether to auto-dispatch templates
+  const shouldAutoDispatch =
+    overrideAutoDispatch !== undefined ? overrideAutoDispatch : settings.globalAutoDispatch;
+  const scrapeLimit = overrideScrapeLimit || settings.globalScrapeLimit || 20;
+
+  logs.push(
+    `[${new Date().toLocaleTimeString()}] ⚙️ Mode: ${
+      shouldAutoDispatch ? '⚡ AUTO-DISPATCH ENABLED (Templates will be sent via CRM)' : '📋 GATHER DATA ONLY (Zero messages sent)'
+    } | Scrape Limit: ${scrapeLimit} leads`
+  );
+
+  // 2. Fetch Past Campaigns to prevent duplicate targeting
   const pastCampaigns = await prisma.campaign.findMany({
-    take: 15,
+    take: 20,
     orderBy: { createdAt: 'desc' },
     select: { targetNiche: true, targetLocation: true },
   });
   const pastTargets = pastCampaigns.map((c) => `${c.targetNiche} in ${c.targetLocation}`);
 
-  // 2. Decide Strategy
+  // 3. Decide Strategy
   let strategy = {
     targetNiche: customNiche || '',
     targetLocation: customLocation || '',
     searchQuery: '',
     rationale: '',
-    estimatedLeadVolume: 20,
+    estimatedLeadVolume: scrapeLimit,
   };
 
   if (!customNiche || !customLocation) {
-    logs.push(`[${new Date().toLocaleTimeString()}] 🧠 AI Market Strategy Engine analyzing high-ticket niches...`);
+    logs.push(`[${new Date().toLocaleTimeString()}] 🧠 AI Market Strategy Engine analyzing Pan-India opportunity...`);
     const aiStrategy = await decideDailyStrategy(pastTargets);
     strategy = {
       targetNiche: customNiche || aiStrategy.targetNiche,
       targetLocation: customLocation || aiStrategy.targetLocation,
       searchQuery: aiStrategy.searchQuery,
       rationale: aiStrategy.rationale,
-      estimatedLeadVolume: aiStrategy.estimatedLeadVolume,
+      estimatedLeadVolume: scrapeLimit,
     };
   } else {
     strategy.searchQuery = `${strategy.targetNiche} in ${strategy.targetLocation}`;
-    strategy.rationale = 'Manually specified niche and market location.';
+    strategy.rationale = 'Manually specified niche and hyper-local location.';
   }
 
   logs.push(`[${new Date().toLocaleTimeString()}] 🎯 Target: "${strategy.targetNiche}" in "${strategy.targetLocation}"`);
 
-  // 3. Create Campaign Record
+  // 4. Create Campaign Record
   const campaign = await prisma.campaign.create({
     data: {
       name: `${strategy.targetNiche} - ${strategy.targetLocation} (${new Date().toLocaleDateString()})`,
@@ -68,50 +97,49 @@ export async function runAutopilotPipeline(
     },
   });
 
-  // 4. Extract Leads from Google Places
-  logs.push(`[${new Date().toLocaleTimeString()}] 🔍 Querying Google Places API: "${strategy.searchQuery}"...`);
-  const rawLeads = await searchGooglePlaces(strategy.searchQuery);
+  // 5. Extract Leads from Google Places with dynamic limit
+  logs.push(`[${new Date().toLocaleTimeString()}] 🔍 Scraping Google Places: "${strategy.searchQuery}" (Target: ${scrapeLimit} leads)...`);
+  const rawLeads = await searchGooglePlaces(strategy.searchQuery, scrapeLimit);
   logs.push(`[${new Date().toLocaleTimeString()}] 📍 Found ${rawLeads.length} business candidates.`);
 
   let totalAudited = 0;
-  let totalQueued = 0;
+  let totalSent = 0;
   const processedLeads = [];
 
   for (const raw of rawLeads) {
     try {
       if (!raw.formattedPhone) {
-        // Skip leads with no valid phone
         continue;
       }
 
-      // Check if lead already exists in DB
+      // Check if lead exists
       let lead = await prisma.lead.findFirst({
         where: {
           OR: [{ placeId: raw.placeId }, { formattedPhone: raw.formattedPhone }],
         },
       });
 
+      // 6. Digital Footprint Audit
+      const audit = await auditDigitalFootprint(
+        raw.websiteUrl,
+        raw.businessName,
+        raw.googleRating,
+        raw.reviewCount
+      );
+      totalAudited++;
+
+      // 7. Generate Personalized Pitch & Meta Template Assignment
+      const aiPitch = await generatePersonalizedPitch(
+        raw.businessName,
+        raw.category || strategy.targetNiche,
+        raw.city || strategy.targetLocation,
+        raw.googleRating || 4.8,
+        raw.reviewCount || 10,
+        audit
+      );
+
       if (!lead) {
-        // 5. Digital Footprint Audit
-        const audit = await auditDigitalFootprint(
-          raw.websiteUrl,
-          raw.businessName,
-          raw.googleRating,
-          raw.reviewCount
-        );
-        totalAudited++;
-
-        // 6. Generate AI Personalized Pitch
-        const aiPitch = await generatePersonalizedPitch(
-          raw.businessName,
-          raw.category || strategy.targetNiche,
-          raw.city || strategy.targetLocation,
-          raw.googleRating || 4.8,
-          raw.reviewCount || 10,
-          audit
-        );
-
-        // 7. Save to CRM Database
+        // Save to Database
         lead = await prisma.lead.create({
           data: {
             campaignId: campaign.id,
@@ -126,7 +154,7 @@ export async function runAutopilotPipeline(
             googleRating: raw.googleRating,
             reviewCount: raw.reviewCount,
             googleMapsUrl: raw.googleMapsUrl,
-            
+
             hasWebsite: audit.hasWebsite,
             websiteWorking: audit.websiteWorking,
             isMobileFriendly: audit.isMobileFriendly,
@@ -134,49 +162,70 @@ export async function runAutopilotPipeline(
             sslValid: audit.sslValid,
             pitchCategory: audit.pitchCategory,
             auditSummary: audit.auditSummary,
-            
+
+            assignedTemplate: aiPitch.metaTemplateName,
+            templateParameters: JSON.stringify(aiPitch.metaTemplateParameters),
             personalizedPitch: aiPitch.pitchText,
             pitchAngle: aiPitch.pitchAngle,
-            status: autoDispatch ? 'QUEUED' : 'PITCH_GENERATED',
+            isTemplateSent: false,
+            status: 'AUDITED',
+          },
+        });
+      } else {
+        // Update existing lead with latest audit & template
+        lead = await prisma.lead.update({
+          where: { id: lead.id },
+          data: {
+            assignedTemplate: aiPitch.metaTemplateName,
+            templateParameters: JSON.stringify(aiPitch.metaTemplateParameters),
+            personalizedPitch: aiPitch.pitchText,
+            pitchAngle: aiPitch.pitchAngle,
+            pitchCategory: audit.pitchCategory,
+            auditSummary: audit.auditSummary,
+          },
+        });
+      }
+
+      // 8. Auto Dispatch via CRM API Gateway (if enabled)
+      if (shouldAutoDispatch && !lead.isTemplateSent && raw.formattedPhone) {
+        logs.push(`[${new Date().toLocaleTimeString()}] 📨 Sending template "${aiPitch.metaTemplateName}" to ${lead.businessName} (${lead.formattedPhone}) via CRM...`);
+
+        const sendRes = await sendWhatsAppMessage({
+          recipientPhone: raw.formattedPhone,
+          recipientName: lead.businessName,
+          templateName: aiPitch.metaTemplateName,
+          templateParameters: aiPitch.metaTemplateParameters,
+          bodyText: lead.personalizedPitch || undefined,
+        });
+
+        await prisma.dispatchLog.create({
+          data: {
+            leadId: lead.id,
+            campaignId: campaign.id,
+            provider: sendRes.provider,
+            messageType: 'TEMPLATE',
+            templateName: aiPitch.metaTemplateName,
+            messageBody: `Template: ${aiPitch.metaTemplateName} | Params: ${JSON.stringify(aiPitch.metaTemplateParameters)}`,
+            status: sendRes.success ? 'SENT' : 'FAILED',
+            whatsappMsgId: sendRes.messageId,
+            errorMessage: sendRes.error,
           },
         });
 
-        // 8. Auto Dispatch if requested
-        if (autoDispatch && raw.formattedPhone) {
-          logs.push(`[${new Date().toLocaleTimeString()}] 📨 Dispatching pitch to ${lead.businessName} (${lead.formattedPhone})...`);
-          
-          const sendRes = await sendWhatsAppMessage({
-            recipientPhone: raw.formattedPhone,
-            templateName: 'hello_world', // Default standard template or custom
-            bodyText: lead.personalizedPitch || undefined,
-            templateParameters: [lead.businessName],
-          });
-
-          await prisma.dispatchLog.create({
+        if (sendRes.success) {
+          lead = await prisma.lead.update({
+            where: { id: lead.id },
             data: {
-              leadId: lead.id,
-              campaignId: campaign.id,
-              provider: sendRes.provider,
-              messageType: 'TEMPLATE',
-              templateName: 'hello_world',
-              messageBody: lead.personalizedPitch || 'Intro template',
-              status: sendRes.success ? 'SENT' : 'FAILED',
-              whatsappMsgId: sendRes.messageId,
-              errorMessage: sendRes.error,
+              isTemplateSent: true,
+              status: 'SENT',
+              lastMessageSentAt: new Date(),
             },
           });
-
-          if (sendRes.success) {
-            await prisma.lead.update({
-              where: { id: lead.id },
-              data: { status: 'SENT', lastMessageSentAt: new Date() },
-            });
-            totalQueued++;
-          }
+          totalSent++;
         }
-
-        processedLeads.push(lead);
       }
+
+      processedLeads.push(lead);
     } catch (err: unknown) {
       const e = err as Error;
       logs.push(`⚠️ Error processing lead ${raw.businessName}: ${e.message}`);
@@ -189,11 +238,13 @@ export async function runAutopilotPipeline(
     data: {
       totalLeadsFound: rawLeads.length,
       totalAudited: totalAudited,
-      totalSent: totalQueued,
+      totalSent: totalSent,
     },
   });
 
-  logs.push(`[${new Date().toLocaleTimeString()}] ✅ Pipeline Completed: Processed ${processedLeads.length} qualified leads.`);
+  logs.push(
+    `[${new Date().toLocaleTimeString()}] ✅ Pipeline Completed: Processed ${processedLeads.length} leads in database (${totalSent} templates sent).`
+  );
 
   return {
     campaignId: campaign.id,
@@ -201,7 +252,7 @@ export async function runAutopilotPipeline(
     targetLocation: strategy.targetLocation,
     totalFound: rawLeads.length,
     totalAudited,
-    totalQueued,
+    totalSent,
     leads: processedLeads,
     logs,
   };
