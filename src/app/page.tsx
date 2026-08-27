@@ -24,6 +24,9 @@ import {
   KeyRound,
   FileCheck,
   Clock,
+  PanelLeftClose,
+  PanelLeft,
+  Menu,
 } from 'lucide-react';
 
 interface Lead {
@@ -59,6 +62,7 @@ interface Lead {
 
 export default function OutreachDashboard() {
   const [activeTab, setActiveTab] = useState<'overview' | 'leads' | 'sandbox' | 'settings'>('overview');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(false);
   const [runningAutopilot, setRunningAutopilot] = useState(false);
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -253,113 +257,169 @@ export default function OutreachDashboard() {
 
   return (
     <div className="flex h-screen bg-slate-950 text-slate-100 overflow-hidden font-sans">
-      {/* Sidebar */}
-      <aside className="w-64 border-r border-slate-800 bg-slate-900/70 backdrop-blur-md flex flex-col justify-between p-4">
+      {/* Collapsible Sidebar Drawer */}
+      <aside
+        className={`${
+          isSidebarOpen ? 'w-64' : 'w-16'
+        } transition-all duration-300 ease-in-out border-r border-slate-800 bg-slate-900/80 backdrop-blur-md flex flex-col justify-between p-3 shrink-0 z-20`}
+      >
         <div>
-          <div className="flex items-center gap-3 px-2 py-3 mb-6">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-              <Zap className="h-6 w-6 text-slate-950 font-bold" />
+          {/* Logo & Toggle Header */}
+          <div className="flex items-center justify-between px-1 py-3 mb-4">
+            <div className="flex items-center gap-3 overflow-hidden">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0">
+                <Zap className="h-6 w-6 text-slate-950 font-bold" />
+              </div>
+              {isSidebarOpen && (
+                <div className="truncate">
+                  <h1 className="text-base font-bold tracking-tight text-white flex items-center gap-1.5 truncate">
+                    OutreachAI <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/30">CRM</span>
+                  </h1>
+                  <p className="text-[11px] text-slate-400 truncate">JISNU Outreach Engine</p>
+                </div>
+              )}
             </div>
-            <div>
-              <h1 className="text-lg font-bold tracking-tight text-white flex items-center gap-1.5">
-                OutreachAI <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/30">CRM</span>
-              </h1>
-              <p className="text-xs text-slate-400">JISNU Outreach Engine</p>
-            </div>
+
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition shrink-0"
+              title={isSidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+            >
+              {isSidebarOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeft className="h-4 w-4" />}
+            </button>
           </div>
 
+          {/* Navigation Links */}
           <nav className="space-y-1.5">
             <button
               onClick={() => setActiveTab('overview')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+              title={!isSidebarOpen ? 'Command Center' : undefined}
+              className={`w-full flex items-center ${
+                isSidebarOpen ? 'gap-3 px-3' : 'justify-center px-0'
+              } py-2.5 rounded-lg text-sm font-medium transition-all ${
                 activeTab === 'overview'
                   ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-sm'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
               }`}
             >
-              <Activity className="h-4 w-4" />
-              Command Center
+              <Activity className="h-4 w-4 shrink-0" />
+              {isSidebarOpen && <span className="truncate">Command Center</span>}
             </button>
 
             <button
               onClick={() => setActiveTab('leads')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+              title={!isSidebarOpen ? 'Lead CRM & Audits' : undefined}
+              className={`w-full flex items-center ${
+                isSidebarOpen ? 'gap-3 px-3' : 'justify-center px-0'
+              } py-2.5 rounded-lg text-sm font-medium transition-all ${
                 activeTab === 'leads'
                   ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-sm'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
               }`}
             >
-              <Building2 className="h-4 w-4" />
-              Lead CRM & Audits
-              {leads.length > 0 && (
-                <span className="ml-auto text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full border border-slate-700">
-                  {leads.length}
-                </span>
+              <Building2 className="h-4 w-4 shrink-0" />
+              {isSidebarOpen && (
+                <>
+                  <span className="truncate">Lead CRM & Audits</span>
+                  {leads.length > 0 && (
+                    <span className="ml-auto text-[11px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full border border-slate-700">
+                      {leads.length}
+                    </span>
+                  )}
+                </>
               )}
             </button>
 
             <button
               onClick={() => setActiveTab('sandbox')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+              title={!isSidebarOpen ? 'WhatsApp Sandbox' : undefined}
+              className={`w-full flex items-center ${
+                isSidebarOpen ? 'gap-3 px-3' : 'justify-center px-0'
+              } py-2.5 rounded-lg text-sm font-medium transition-all ${
                 activeTab === 'sandbox'
                   ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-sm'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
               }`}
             >
-              <MessageSquare className="h-4 w-4" />
-              WhatsApp Sandbox
+              <MessageSquare className="h-4 w-4 shrink-0" />
+              {isSidebarOpen && <span className="truncate">WhatsApp Sandbox</span>}
             </button>
 
             <button
               onClick={() => setActiveTab('settings')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+              title={!isSidebarOpen ? 'Settings & CRM Gateway' : undefined}
+              className={`w-full flex items-center ${
+                isSidebarOpen ? 'gap-3 px-3' : 'justify-center px-0'
+              } py-2.5 rounded-lg text-sm font-medium transition-all ${
                 activeTab === 'settings'
                   ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-sm'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
               }`}
             >
-              <Sliders className="h-4 w-4" />
-              Settings & CRM Gateway
+              <Sliders className="h-4 w-4 shrink-0" />
+              {isSidebarOpen && <span className="truncate">Settings & Gateway</span>}
             </button>
           </nav>
         </div>
 
-        {/* Global Dispatch Status Card */}
-        <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 text-xs space-y-2.5">
-          <div className="flex items-center justify-between">
-            <span className="text-slate-400 font-medium">Auto-Dispatch</span>
-            <span className={`font-bold px-2 py-0.5 rounded text-[10px] ${settings.globalAutoDispatch ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'}`}>
-              {settings.globalAutoDispatch ? 'ACTIVE' : 'OFF'}
-            </span>
+        {/* Global Dispatch Status Card (Only shown when expanded) */}
+        {isSidebarOpen ? (
+          <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 text-xs space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-slate-400 font-medium">Auto-Dispatch</span>
+              <span className={`font-bold px-2 py-0.5 rounded text-[10px] ${settings.globalAutoDispatch ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'}`}>
+                {settings.globalAutoDispatch ? 'ACTIVE' : 'OFF'}
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-slate-400">
+              <span>CRM Sync</span>
+              <span className="text-emerald-400 font-semibold flex items-center gap-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                Live API
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-slate-400">
+              <span>Scrape Batch</span>
+              <span className="text-slate-300 font-mono font-medium">{settings.globalScrapeLimit} Leads</span>
+            </div>
           </div>
-          <div className="flex items-center justify-between text-slate-400">
-            <span>CRM Sync</span>
-            <span className="text-emerald-400 font-semibold flex items-center gap-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              Live API
-            </span>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-2">
+            <span
+              className={`h-2.5 w-2.5 rounded-full ${
+                settings.globalAutoDispatch ? 'bg-emerald-400 animate-pulse' : 'bg-slate-600'
+              }`}
+              title={`Auto-Dispatch: ${settings.globalAutoDispatch ? 'ON' : 'OFF'}`}
+            ></span>
           </div>
-          <div className="flex items-center justify-between text-slate-400">
-            <span>Scrape Batch</span>
-            <span className="text-slate-300 font-mono font-medium">{settings.globalScrapeLimit} Leads</span>
-          </div>
-        </div>
+        )}
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col overflow-y-auto bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
-        {/* Top App Header with Global Auto-Dispatch Switch */}
+      <main className="flex-1 flex flex-col overflow-y-auto bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 min-w-0">
+        {/* Top App Header with Drawer Toggle & Global Auto-Dispatch Switch */}
         <header className="h-16 border-b border-slate-800 px-6 flex items-center justify-between bg-slate-900/50 backdrop-blur-md sticky top-0 z-10">
-          <div>
-            <h2 className="text-base font-semibold text-white capitalize">
-              {activeTab === 'overview' && 'Autonomous Command Center'}
-              {activeTab === 'leads' && 'Qualified Business Leads & Digital Audits'}
-              {activeTab === 'sandbox' && 'WhatsApp Dispatch Sandbox'}
-              {activeTab === 'settings' && 'System Configuration & CRM API Gateway'}
-            </h2>
-            <p className="text-xs text-slate-400">
-              AI Market Selection • Google Places Scraper • Digital Audit • Meta CRM Dispatch
-            </p>
+          <div className="flex items-center gap-3">
+            {!isSidebarOpen && (
+              <button
+                onClick={() => setIsSidebarOpen(true)}
+                className="p-1.5 rounded-lg border border-slate-800 bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 transition"
+                title="Open Sidebar"
+              >
+                <PanelLeft className="h-4 w-4 text-emerald-400" />
+              </button>
+            )}
+            <div>
+              <h2 className="text-base font-semibold text-white capitalize">
+                {activeTab === 'overview' && 'Autonomous Command Center'}
+                {activeTab === 'leads' && 'Qualified Business Leads & Digital Audits'}
+                {activeTab === 'sandbox' && 'WhatsApp Dispatch Sandbox'}
+                {activeTab === 'settings' && 'System Configuration & CRM API Gateway'}
+              </h2>
+              <p className="text-xs text-slate-400">
+                AI Market Selection • Google Places Scraper • Digital Audit • Meta CRM Dispatch
+              </p>
+            </div>
           </div>
 
           <div className="flex items-center gap-4">

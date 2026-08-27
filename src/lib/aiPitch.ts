@@ -9,14 +9,82 @@ export interface GeneratedPitch {
   keyHooks: string[];
 }
 
+/**
+ * Strips out legal suffixes, emojis, and marketing keywords from Google business titles
+ * (e.g. "Dr. Batra's Dental Care - Best Dentist in Mumbai™" -> "Dr. Batra's Dental Care")
+ */
 export function cleanBusinessName(rawName: string): string {
   if (!rawName) return 'there';
-  let cleaned = rawName.split(/[-–|:,•]/)[0].trim();
-  const words = cleaned.split(' ');
+
+  let cleaned = rawName
+    .replace(/[®™©]/g, '')
+    .split(/[-–—|:•,\(\)]/)[0]
+    .trim();
+
+  // Strip common trailing descriptors
+  cleaned = cleaned.replace(/\s+(Pvt\.?\s*Ltd\.?|LLP|LLC|Private Limited|Enterprises|Solutions|Inc\.?)$/i, '');
+
+  const words = cleaned.split(/\s+/);
   if (words.length > 4) {
     cleaned = words.slice(0, 3).join(' ');
   }
-  return cleaned;
+
+  return cleaned.trim() || 'there';
+}
+
+/**
+ * Cleans ugly Google raw system types like "general_contractor" or "health"
+ * into natural readable professional phrases like "Interior Design Firms" or "Dental Clinics"
+ */
+export function cleanCategoryName(rawCategory?: string | null, targetNiche?: string | null): string {
+  // If targetNiche is already provided from the search query/campaign, use it directly
+  if (targetNiche && targetNiche.trim().length > 2) {
+    return targetNiche.trim().toLowerCase();
+  }
+
+  if (!rawCategory || !rawCategory.trim()) {
+    return 'local businesses';
+  }
+
+  // Pure dynamic regex formatting: converts any raw string (e.g. "solar_panel_contractor") to "solar panel contractor"
+  const clean = rawCategory
+    .split(',')[0]
+    .replace(/[_\-]+/g, ' ')
+    .replace(/\b(establishment|point of interest)\b/gi, '')
+    .trim()
+    .toLowerCase();
+
+  return clean || 'local businesses';
+}
+
+/**
+ * Dynamically cleans any Indian address or city string to extract the real, natural locality
+ * (e.g. "Kalyani Nagar, Pune 411006" -> "Kalyani Nagar", "Andheri West, Mumbai" -> "Andheri West")
+ */
+export function cleanLocationName(city?: string | null, address?: string | null): string {
+  // If address is available, extract the most specific locality/sub-area
+  if (address && address.trim()) {
+    const parts = address
+      .split(',')
+      .map((p) => p.replace(/\b(India|\d{6})\b/gi, '').trim())
+      .filter((p) => p.length > 2 && !/^\d+$/.test(p));
+
+    if (parts.length >= 2) {
+      // Return the sub-locality (e.g. "Greater Kailash 1", "Kalyani Nagar", "Indiranagar")
+      const candidate = parts[parts.length - 2] || parts[0];
+      return candidate.replace(/\b\d{6}\b/g, '').trim();
+    }
+  }
+
+  if (city && city.trim()) {
+    // Strip 6-digit Indian PIN codes dynamically
+    const cleanCity = city.replace(/\b\d{6}\b/g, '').replace(/,/g, '').trim();
+    if (cleanCity.length > 2) {
+      return cleanCity;
+    }
+  }
+
+  return 'your area';
 }
 
 /**
@@ -31,11 +99,12 @@ export function buildUniversalProductionPitch(
   city: string | null,
   googleRating: number | null,
   reviewCount: number | null,
-  audit: AuditResult
+  audit: AuditResult,
+  targetNiche?: string | null
 ): GeneratedPitch {
   const name = cleanBusinessName(rawBusinessName);
-  const location = city || 'your area';
-  const cleanCategory = category ? category.split(',')[0].trim() : 'businesses';
+  const location = cleanLocationName(city);
+  const cleanCategory = cleanCategoryName(category, targetNiche);
   const ratingStr = `${googleRating || 4.8}★`;
 
   // -------------------------------------------------------------------------
@@ -57,12 +126,12 @@ export function buildUniversalProductionPitch(
   // -------------------------------------------------------------------------
   // TEMPLATE 2: universal_b2b_crm_intro (Businesses Needing CRM & Automation)
   // -------------------------------------------------------------------------
-  if (audit.pitchCategory === 'ERP_CRM' || !audit.isMobileFriendly) {
+  if (audit.pitchCategory === 'ERP_CRM') {
     const pitchText = `Hello Team ${name},\n\nKudos on your ${ratingStr} reputation in ${location}! 🌟\n\nI visited your website and loved your work. We noticed an opportunity to streamline how you handle incoming customer inquiries—especially when staff is busy or after business hours.\n\nWe build custom WhatsApp CRM workflows, automated customer follow-ups, and ERP business management software tailored for ${cleanCategory} to capture and convert more client inquiries automatically.\n\nWould you be open to seeing a quick 1-minute visual walkthrough of how this works?`;
 
     return {
       pitchText,
-      pitchAngle: 'Custom ERP, CRM & Business Automation',
+      pitchAngle: 'WhatsApp CRM & ERP Automation',
       templateCategory: 'ERP_CRM_AUTOMATION',
       metaTemplateName: 'universal_b2b_crm_intro',
       metaTemplateParameters: [name, ratingStr, location, cleanCategory],
@@ -91,7 +160,8 @@ export async function generatePersonalizedPitch(
   city: string | null,
   googleRating: number | null,
   reviewCount: number | null,
-  audit: AuditResult
+  audit: AuditResult,
+  targetNiche?: string | null
 ): Promise<GeneratedPitch> {
   return buildUniversalProductionPitch(
     businessName,
@@ -99,6 +169,7 @@ export async function generatePersonalizedPitch(
     city,
     googleRating,
     reviewCount,
-    audit
+    audit,
+    targetNiche
   );
 }
