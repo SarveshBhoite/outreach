@@ -80,6 +80,13 @@ export async function searchGooglePlaces(
       }
 
       const searchRes = await axios.get(searchUrl);
+
+      if (searchRes.data.status && searchRes.data.status !== 'OK' && searchRes.data.status !== 'ZERO_RESULTS') {
+        const errorMsg = searchRes.data.error_message || searchRes.data.status;
+        console.error(`[Google Places Error]: ${searchRes.data.status} - ${errorMsg}`);
+        throw new Error(`Google Places API: ${searchRes.data.status} - ${errorMsg}`);
+      }
+
       const results = searchRes.data.results || [];
       allCandidates.push(...results);
 

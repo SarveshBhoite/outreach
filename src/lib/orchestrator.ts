@@ -99,8 +99,16 @@ export async function runAutopilotPipeline(
 
   // 5. Extract Leads from Google Places with dynamic limit
   logs.push(`[${new Date().toLocaleTimeString()}] 🔍 Scraping Google Places: "${strategy.searchQuery}" (Target: ${scrapeLimit} leads)...`);
-  const rawLeads = await searchGooglePlaces(strategy.searchQuery, scrapeLimit);
-  logs.push(`[${new Date().toLocaleTimeString()}] 📍 Found ${rawLeads.length} business candidates.`);
+  let rawLeads = [];
+  try {
+    rawLeads = await searchGooglePlaces(strategy.searchQuery, scrapeLimit);
+    logs.push(`[${new Date().toLocaleTimeString()}] 📍 Found ${rawLeads.length} business candidates.`);
+  } catch (placesErr: any) {
+    const msg = placesErr.message || 'Failed to query Google Places';
+    logs.push(`[${new Date().toLocaleTimeString()}] ⚠️ Places API Error: ${msg}`);
+    console.error('[Orchestrator Places Error]:', msg);
+    throw placesErr;
+  }
 
   let totalAudited = 0;
   let totalSent = 0;
