@@ -3,29 +3,52 @@ import { prisma } from '@/lib/prisma';
 import { sendWhatsAppMessage } from '@/lib/whatsapp';
 import { cleanBusinessName, cleanCategoryName, cleanLocationName } from '@/lib/aiPitch';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const leads = await prisma.lead.findMany({
-      orderBy: { createdAt: 'desc' },
-      include: {
-        campaign: {
-          select: { name: true, targetNiche: true, targetLocation: true },
+    const { searchParams } = new URL(request.url);
+    const pageParam = searchParams.get('page');
+    const limitParam = searchParams.get('limit');
+    const allParam = searchParams.get('all'); // When true (e.g. for full export), bypasses limit
+
+    const isAll = allParam === 'true';
+    const page = Math.max(1, parseInt(pageParam || '1', 10));
+    const limit = Math.max(1, parseInt(limitParam || '20', 10));
+    const skip = (page - 1) * limit;
+
+    const [totalCount, leads] = await Promise.all([
+      prisma.lead.count(),
+      prisma.lead.findMany({
+        orderBy: { createdAt: 'desc' },
+        ...(isAll ? {} : { skip, take: limit }),
+        include: {
+          campaign: {
+            select: { name: true, targetNiche: true, targetLocation: true },
+          },
         },
-      },
-    });
+      }),
+    ]);
 
     const stats = {
-      totalLeads: await prisma.lead.count(),
+      totalLeads: totalCount,
       totalAudited: await prisma.lead.count({ where: { status: { not: 'DISCOVERED' } } }),
       totalSent: await prisma.lead.count({ where: { isTemplateSent: true } }),
       totalPending: await prisma.lead.count({ where: { isTemplateSent: false } }),
     };
+
+    const totalPages = Math.ceil(totalCount / limit) || 1;
 
     return NextResponse.json({
       success: true,
       data: {
         leads,
         stats,
+        pagination: {
+          page: isAll ? 1 : page,
+          limit: isAll ? totalCount : limit,
+          totalCount,
+          totalPages: isAll ? 1 : totalPages,
+          hasMore: isAll ? false : page < totalPages,
+        },
       },
     });
   } catch (error: unknown) {

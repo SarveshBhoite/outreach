@@ -33,6 +33,9 @@ import {
   Filter,
   CheckSquare,
   Square,
+  ChevronLeft,
+  ChevronRight,
+  LogOut,
 } from 'lucide-react';
 
 interface Lead {
@@ -73,6 +76,9 @@ export default function OutreachDashboard() {
   const [loading, setLoading] = useState(false);
   const [runningAutopilot, setRunningAutopilot] = useState(false);
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const [totalLeadsCount, setTotalLeadsCount] = useState<number>(0);
   const [stats, setStats] = useState({
     totalLeads: 0,
     totalAudited: 0,
@@ -149,16 +155,41 @@ export default function OutreachDashboard() {
     setSelectedFields(['businessName', 'formattedPhone', 'email']);
   };
 
+  // Fetch all leads when opening export modal
+  const [allExportLeads, setAllExportLeads] = useState<Lead[]>([]);
+  const [loadingExportLeads, setLoadingExportLeads] = useState(false);
+
+  useEffect(() => {
+    if (isExportModalOpen) {
+      const fetchAllForExport = async () => {
+        try {
+          setLoadingExportLeads(true);
+          const res = await fetch('/api/leads?all=true');
+          const data = await res.json();
+          if (data.success) {
+            setAllExportLeads(data.data.leads || []);
+          }
+        } catch (err) {
+          console.error('Failed to load all leads for export:', err);
+          setAllExportLeads(leads);
+        } finally {
+          setLoadingExportLeads(false);
+        }
+      };
+      fetchAllForExport();
+    }
+  }, [isExportModalOpen]);
+
   // Helper to compute currently filtered leads for preview and export
   const getMatchingLeads = () => {
     const now = new Date();
-    return leads.filter((lead) => {
+    const sourceLeads = allExportLeads.length > 0 ? allExportLeads : leads;
+    return sourceLeads.filter((lead) => {
       if (exportDateRange !== 'all') {
         const leadDate = new Date(lead.createdAt);
         if (isNaN(leadDate.getTime())) return true;
 
         if (exportDateRange === 'today') {
-          // Check same calendar date (local) or within last 24h for timezone safety
           const isSameDay =
             leadDate.getFullYear() === now.getFullYear() &&
             leadDate.getMonth() === now.getMonth() &&
@@ -272,20 +303,35 @@ export default function OutreachDashboard() {
     setIsExportModalOpen(false);
   };
 
-  // Fetch Dashboard Data
-  const fetchDashboardData = async () => {
+  // Fetch Dashboard Data with Pagination
+  const fetchDashboardData = async (targetPage: number = 1) => {
     try {
       setLoading(true);
-      const res = await fetch('/api/leads');
+      const res = await fetch(`/api/leads?page=${targetPage}&limit=20`);
       const data = await res.json();
       if (data.success) {
         setLeads(data.data.leads || []);
         setStats(data.data.stats || { totalLeads: 0, totalAudited: 0, totalSent: 0, totalPending: 0 });
+        if (data.data.pagination) {
+          setCurrentPage(data.data.pagination.page);
+          setTotalPages(data.data.pagination.totalPages);
+          setTotalLeadsCount(data.data.pagination.totalCount);
+        }
       }
     } catch (err) {
       console.error('Failed to load dashboard data:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Handle User Logout
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      window.location.href = '/login';
+    } catch (err) {
+      window.location.href = '/login';
     }
   };
 
@@ -615,12 +661,20 @@ export default function OutreachDashboard() {
             </div>
 
             <button
-              onClick={fetchDashboardData}
+              onClick={() => fetchDashboardData(currentPage)}
               disabled={loading}
               className="p-2 rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition"
               title="Refresh Data"
             >
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            </button>
+
+            <button
+              onClick={handleLogout}
+              className="p-2 rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:text-rose-400 hover:border-rose-500/40 hover:bg-rose-950/20 transition"
+              title="Sign Out"
+            >
+              <LogOut className="h-4 w-4" />
             </button>
 
             <button
@@ -800,7 +854,9 @@ export default function OutreachDashboard() {
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-xs text-slate-400 font-mono">Showing {leads.length} records</span>
+                <span className="text-xs text-slate-400 font-mono">
+                  Showing {leads.length} of {totalLeadsCount || leads.length} leads
+                </span>
                 <button
                   onClick={() => setIsExportModalOpen(true)}
                   disabled={leads.length === 0}
@@ -923,6 +979,76 @@ export default function OutreachDashboard() {
                     )}
                   </tbody>
                 </table>
+              </div>
+
+              {/* Pagination Bar */}
+              <div className="px-5 py-3.5 bg-slate-950/80 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
+                <div className="flex items-center gap-2">
+                  <span>
+                    Showing <span className="text-white font-semibold">{leads.length > 0 ? (currentPage - 1) * 20 + 1 : 0}</span> to{' '}
+                    <span className="text-white font-semibold">
+                      {Math.min(currentPage * 20, totalLeadsCount || leads.length)}
+                    </span>{' '}
+                    of <span className="text-white font-semibold">{totalLeadsCount || leads.length}</span> leads
+                  </span>
+                  {loading && (
+                    <span className="flex items-center gap-1 text-emerald-400 text-[11px]">
+                      <RefreshCw className="h-3 w-3 animate-spin" /> Loading page...
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (currentPage > 1) fetchDashboardData(currentPage - 1);
+                    }}
+                    disabled={currentPage <= 1 || loading}
+                    className="p-1.5 rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition flex items-center gap-1"
+                    title="Previous 20 leads"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    <span className="hidden sm:inline pr-1">Prev</span>
+                  </button>
+
+                  <div className="flex items-center gap-1 px-1 font-mono text-xs">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let p = i + 1;
+                      if (totalPages > 5 && currentPage > 3) {
+                        p = Math.min(totalPages, currentPage - 2 + i);
+                      }
+                      return (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => fetchDashboardData(p)}
+                          disabled={loading}
+                          className={`h-7 w-7 rounded-lg border text-xs font-semibold transition ${
+                            currentPage === p
+                              ? 'bg-emerald-500 border-emerald-400 text-slate-950 shadow-sm shadow-emerald-500/30'
+                              : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800'
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (currentPage < totalPages) fetchDashboardData(currentPage + 1);
+                    }}
+                    disabled={currentPage >= totalPages || loading}
+                    className="p-1.5 rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition flex items-center gap-1"
+                    title="Next 20 leads"
+                  >
+                    <span className="hidden sm:inline pl-1">Next</span>
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
