@@ -28,6 +28,11 @@ import {
   PanelLeft,
   Menu,
   Mail,
+  Download,
+  Calendar,
+  Filter,
+  CheckSquare,
+  Square,
 } from 'lucide-react';
 
 interface Lead {
@@ -97,6 +102,175 @@ export default function OutreachDashboard() {
   const [testTemplate, setTestTemplate] = useState('universal_b2b_web_v2');
   const [testSending, setTestSending] = useState(false);
   const [testResult, setTestResult] = useState<{ success?: boolean; message?: string } | null>(null);
+
+  // Export Modal & Filter State
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [exportFormat, setExportFormat] = useState<'csv' | 'json'>('csv');
+  const [exportDateRange, setExportDateRange] = useState<'all' | 'today' | '7days' | '30days' | 'custom'>('all');
+  const [exportStartDate, setExportStartDate] = useState('');
+  const [exportEndDate, setExportEndDate] = useState('');
+  const [exportTemplateFilter, setExportTemplateFilter] = useState<'all' | 'sent' | 'pending'>('all');
+
+  // Selectable Export Fields
+  const availableExportFields = [
+    { key: 'businessName', label: 'Business Name', defaultChecked: true },
+    { key: 'category', label: 'Niche / Category', defaultChecked: true },
+    { key: 'city', label: 'City / Location', defaultChecked: true },
+    { key: 'formattedPhone', label: 'Phone (WhatsApp)', defaultChecked: true },
+    { key: 'email', label: 'Email Address', defaultChecked: true },
+    { key: 'websiteUrl', label: 'Website URL', defaultChecked: true },
+    { key: 'googleRating', label: 'Google Rating', defaultChecked: true },
+    { key: 'reviewCount', label: 'Review Count', defaultChecked: false },
+    { key: 'pitchAngle', label: 'Pitch Angle', defaultChecked: true },
+    { key: 'assignedTemplate', label: 'Assigned Meta Template', defaultChecked: true },
+    { key: 'isTemplateSent', label: 'Template Sent Status', defaultChecked: true },
+    { key: 'auditSummary', label: 'Digital Footprint Audit', defaultChecked: false },
+    { key: 'personalizedPitch', label: 'Tailored Pitch Copy', defaultChecked: false },
+    { key: 'address', label: 'Full Address', defaultChecked: false },
+    { key: 'googleMapsUrl', label: 'Google Maps URL', defaultChecked: false },
+    { key: 'createdAt', label: 'Scraped Date & Time', defaultChecked: true },
+  ];
+
+  const [selectedFields, setSelectedFields] = useState<string[]>(
+    availableExportFields.filter((f) => f.defaultChecked).map((f) => f.key)
+  );
+
+  const toggleExportField = (fieldKey: string) => {
+    setSelectedFields((prev) =>
+      prev.includes(fieldKey) ? prev.filter((k) => k !== fieldKey) : [...prev, fieldKey]
+    );
+  };
+
+  const selectAllFields = () => {
+    setSelectedFields(availableExportFields.map((f) => f.key));
+  };
+
+  const deselectAllFields = () => {
+    setSelectedFields(['businessName', 'formattedPhone', 'email']);
+  };
+
+  // Helper to compute currently filtered leads for preview and export
+  const getMatchingLeads = () => {
+    const now = new Date();
+    return leads.filter((lead) => {
+      if (exportDateRange !== 'all') {
+        const leadDate = new Date(lead.createdAt);
+        if (isNaN(leadDate.getTime())) return true;
+
+        if (exportDateRange === 'today') {
+          // Check same calendar date (local) or within last 24h for timezone safety
+          const isSameDay =
+            leadDate.getFullYear() === now.getFullYear() &&
+            leadDate.getMonth() === now.getMonth() &&
+            leadDate.getDate() === now.getDate();
+          const isWithin24h = now.getTime() - leadDate.getTime() <= 24 * 60 * 60 * 1000;
+          if (!isSameDay && !isWithin24h) return false;
+        } else if (exportDateRange === '7days') {
+          const past7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          if (leadDate < past7) return false;
+        } else if (exportDateRange === '30days') {
+          const past30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          if (leadDate < past30) return false;
+        } else if (exportDateRange === 'custom') {
+          if (exportStartDate) {
+            const start = new Date(exportStartDate);
+            start.setHours(0, 0, 0, 0);
+            if (leadDate < start) return false;
+          }
+          if (exportEndDate) {
+            const end = new Date(exportEndDate);
+            end.setHours(23, 59, 59, 999);
+            if (leadDate > end) return false;
+          }
+        }
+      }
+
+      // Template Sent status filter
+      if (exportTemplateFilter === 'sent' && !lead.isTemplateSent) return false;
+      if (exportTemplateFilter === 'pending' && lead.isTemplateSent) return false;
+
+      return true;
+    });
+  };
+
+  const matchingLeadsCount = getMatchingLeads().length;
+
+  // Run Export
+  const handleExecuteExport = () => {
+    if (selectedFields.length === 0) {
+      alert('Please select at least one field/column to export.');
+      return;
+    }
+
+    const filteredLeads = getMatchingLeads();
+
+    if (filteredLeads.length === 0) {
+      alert('No leads match the selected date range and filter criteria.');
+      return;
+    }
+
+    // Format Data
+    const exportData = filteredLeads.map((lead) => {
+      const row: Record<string, any> = {};
+      selectedFields.forEach((fieldKey) => {
+        const fieldMeta = availableExportFields.find((f) => f.key === fieldKey);
+        const colLabel = fieldMeta?.label || fieldKey;
+
+        if (fieldKey === 'isTemplateSent') {
+          row[colLabel] = lead.isTemplateSent ? 'SENT' : 'PENDING';
+        } else if (fieldKey === 'createdAt') {
+          row[colLabel] = new Date(lead.createdAt).toLocaleString();
+        } else {
+          row[colLabel] = (lead as any)[fieldKey] ?? '';
+        }
+      });
+      return row;
+    });
+
+    const timestamp = new Date().toISOString().slice(0, 10);
+    const fileName = `outreach_leads_export_${exportDateRange}_${timestamp}.${exportFormat}`;
+
+    if (exportFormat === 'json') {
+      const jsonBlob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(jsonBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } else {
+      // Generate CSV
+      const headers = selectedFields.map((k) => {
+        const meta = availableExportFields.find((f) => f.key === k);
+        return `"${(meta?.label || k).replace(/"/g, '""')}"`;
+      });
+
+      const csvRows = exportData.map((row) => {
+        return selectedFields
+          .map((k) => {
+            const meta = availableExportFields.find((f) => f.key === k);
+            const val = String(row[meta?.label || k] ?? '');
+            return `"${val.replace(/"/g, '""')}"`;
+          })
+          .join(',');
+      });
+
+      const csvContent = [headers.join(','), ...csvRows].join('\r\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+
+    setIsExportModalOpen(false);
+  };
 
   // Fetch Dashboard Data
   const fetchDashboardData = async () => {
@@ -625,7 +799,16 @@ export default function OutreachDashboard() {
                   Inspect digital audit diagnosis, view the assigned Meta template, and dispatch 1-click pitches.
                 </p>
               </div>
-              <span className="text-xs text-slate-400 font-mono">Showing {leads.length} records</span>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-slate-400 font-mono">Showing {leads.length} records</span>
+                <button
+                  onClick={() => setIsExportModalOpen(true)}
+                  disabled={leads.length === 0}
+                  className="px-3.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-md shadow-emerald-500/20 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Download className="h-3.5 w-3.5" /> Export Leads
+                </button>
+              </div>
             </div>
 
             <div className="border border-slate-800 rounded-2xl overflow-hidden bg-slate-900/80 shadow-lg">
@@ -996,6 +1179,230 @@ export default function OutreachDashboard() {
                     </>
                   )}
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal: Export Leads & Custom Columns */}
+        {isExportModalOpen && (
+          <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 space-y-5 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+              {/* Header */}
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-9 w-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                    <Download className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-white">Export Qualified Leads</h3>
+                    <p className="text-xs text-slate-400">
+                      Select custom fields, configure time ranges, and download your export file.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsExportModalOpen(false)}
+                  className="text-slate-400 hover:text-white text-lg font-bold px-2"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="space-y-4 overflow-y-auto pr-1 flex-1">
+                {/* 1. Time Range Selector */}
+                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+                  <label className="text-xs font-bold text-slate-200 flex items-center gap-2">
+                    <Calendar className="h-3.5 w-3.5 text-indigo-400" />
+                    Time Range Filter
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                    {[
+                      { id: 'all', label: 'All Time' },
+                      { id: 'today', label: 'Today Only' },
+                      { id: '7days', label: 'Past 7 Days' },
+                      { id: '30days', label: 'Past 30 Days' },
+                      { id: 'custom', label: 'Custom Range' },
+                    ].map((t) => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => setExportDateRange(t.id as any)}
+                        className={`py-1.5 px-3 rounded-lg text-xs font-semibold border transition text-center ${
+                          exportDateRange === t.id
+                            ? 'bg-indigo-600 border-indigo-500 text-white shadow-sm shadow-indigo-500/30'
+                            : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800'
+                        }`}
+                      >
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Custom Date Pickers */}
+                  {exportDateRange === 'custom' && (
+                    <div className="grid grid-cols-2 gap-3 pt-2">
+                      <div>
+                        <label className="text-[11px] text-slate-400 block mb-1">Start Date</label>
+                        <input
+                          type="date"
+                          value={exportStartDate}
+                          onChange={(e) => setExportStartDate(e.target.value)}
+                          className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] text-slate-400 block mb-1">End Date</label>
+                        <input
+                          type="date"
+                          value={exportEndDate}
+                          onChange={(e) => setExportEndDate(e.target.value)}
+                          className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 font-mono"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. Dispatch Status Filter & Export Format */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                    <label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                      <Filter className="h-3.5 w-3.5 text-emerald-400" />
+                      Status Filter
+                    </label>
+                    <div className="flex gap-2">
+                      {[
+                        { id: 'all', label: 'All Leads' },
+                        { id: 'sent', label: 'Sent Only' },
+                        { id: 'pending', label: 'Pending' },
+                      ].map((s) => (
+                        <button
+                          key={s.id}
+                          type="button"
+                          onClick={() => setExportTemplateFilter(s.id as any)}
+                          className={`flex-1 py-1 px-2 rounded-lg text-[11px] font-medium border transition ${
+                            exportTemplateFilter === s.id
+                              ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
+                              : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          {s.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                    <label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                      <Download className="h-3.5 w-3.5 text-sky-400" />
+                      File Format
+                    </label>
+                    <div className="flex gap-2">
+                      {[
+                        { id: 'csv', label: 'CSV (Excel / Sheets)' },
+                        { id: 'json', label: 'JSON (Raw Data)' },
+                      ].map((fmt) => (
+                        <button
+                          key={fmt.id}
+                          type="button"
+                          onClick={() => setExportFormat(fmt.id as any)}
+                          className={`flex-1 py-1 px-2 rounded-lg text-[11px] font-medium border transition ${
+                            exportFormat === fmt.id
+                              ? 'bg-sky-500/20 border-sky-500/40 text-sky-300'
+                              : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          {fmt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Column Selection Checklist */}
+                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                      <CheckSquare className="h-3.5 w-3.5 text-amber-400" />
+                      Select Columns / Fields To Export ({selectedFields.length}/{availableExportFields.length})
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={selectAllFields}
+                        className="text-[11px] text-emerald-400 hover:text-emerald-300 underline"
+                      >
+                        Select All
+                      </button>
+                      <span className="text-slate-600">•</span>
+                      <button
+                        type="button"
+                        onClick={deselectAllFields}
+                        className="text-[11px] text-slate-400 hover:text-slate-300 underline"
+                      >
+                        Reset
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-52 overflow-y-auto pr-1">
+                    {availableExportFields.map((field) => {
+                      const isChecked = selectedFields.includes(field.key);
+                      return (
+                        <div
+                          key={field.key}
+                          onClick={() => toggleExportField(field.key)}
+                          className={`p-2 rounded-lg border text-xs cursor-pointer flex items-center gap-2.5 select-none transition ${
+                            isChecked
+                              ? 'bg-emerald-950/30 border-emerald-500/30 text-emerald-200'
+                              : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:bg-slate-800/60'
+                          }`}
+                        >
+                          {isChecked ? (
+                            <CheckSquare className="h-4 w-4 text-emerald-400 shrink-0" />
+                          ) : (
+                            <Square className="h-4 w-4 text-slate-600 shrink-0" />
+                          )}
+                          <span className="truncate">{field.label}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="flex items-center justify-between pt-3 border-t border-slate-800">
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-mono px-2 py-0.5 rounded-full border ${
+                    matchingLeadsCount > 0
+                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                      : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                  }`}>
+                    {matchingLeadsCount} matching lead{matchingLeadsCount === 1 ? '' : 's'}
+                  </span>
+                  <span className="text-[11px] text-slate-500 font-mono">
+                    ({leads.length} total)
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsExportModalOpen(false)}
+                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleExecuteExport}
+                    disabled={matchingLeadsCount === 0}
+                    className="px-5 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed text-slate-950 shadow-md shadow-emerald-500/20 transition cursor-pointer"
+                  >
+                    <Download className="h-3.5 w-3.5" /> Download {exportFormat.toUpperCase()} ({matchingLeadsCount})
+                  </button>
+                </div>
               </div>
             </div>
           </div>
