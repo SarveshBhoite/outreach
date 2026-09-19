@@ -44,6 +44,7 @@ import {
   Check,
   UserCheck,
   BadgeCheck,
+  ExternalLink,
 } from 'lucide-react';
 
 interface UserProfile {
@@ -1384,7 +1385,19 @@ export default function OutreachDashboard() {
 
                           {/* Website Audit */}
                           <td className="px-4 py-3">
-                            {lead.hasWebsite ? (
+                            {lead.hasWebsite && lead.websiteUrl ? (
+                              <a
+                                href={lead.websiteUrl.startsWith('http') ? lead.websiteUrl : `https://${lead.websiteUrl}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-200 transition max-w-[130px] truncate"
+                                title={lead.websiteUrl}
+                              >
+                                <Globe className="h-3 w-3 shrink-0" />
+                                <span className="truncate">{lead.websiteUrl.replace(/^https?:\/\/(www\.)?/, '')}</span>
+                                <ExternalLink className="h-2.5 w-2.5 shrink-0 opacity-70" />
+                              </a>
+                            ) : lead.hasWebsite ? (
                               <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                                 <Globe className="h-3 w-3" /> Active
                               </span>
@@ -1844,6 +1857,22 @@ export default function OutreachDashboard() {
                         </span>
                       </>
                     )}
+                    {selectedLead.websiteUrl && (
+                      <>
+                        <span>•</span>
+                        <a
+                          href={selectedLead.websiteUrl.startsWith('http') ? selectedLead.websiteUrl : `https://${selectedLead.websiteUrl}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-sky-600 hover:text-sky-800 font-semibold flex items-center gap-1 underline"
+                          title="Open Website"
+                        >
+                          <Globe className="h-3 w-3" />
+                          <span className="truncate max-w-[200px]">{selectedLead.websiteUrl.replace(/^https?:\/\//, '')}</span>
+                          <ExternalLink className="h-2.5 w-2.5" />
+                        </a>
+                      </>
+                    )}
                   </p>
                 </div>
                 <button
@@ -1911,10 +1940,41 @@ export default function OutreachDashboard() {
               </div>
 
               {/* Digital Audit Card */}
-              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5 text-xs">
-                <div className="font-bold text-slate-800 flex items-center gap-1.5">
-                  <Globe className="h-3.5 w-3.5 text-sky-600" /> Digital Footprint Audit:
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
+                <div className="font-bold text-slate-800 flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <Globe className="h-3.5 w-3.5 text-sky-600" /> Digital Footprint Audit:
+                  </div>
+                  {selectedLead.websiteUrl ? (
+                    <a
+                      href={selectedLead.websiteUrl.startsWith('http') ? selectedLead.websiteUrl : `https://${selectedLead.websiteUrl}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-[11px] font-bold text-sky-700 bg-sky-100/70 hover:bg-sky-200/80 px-2.5 py-0.5 rounded-full border border-sky-300 flex items-center gap-1 transition"
+                      title={selectedLead.websiteUrl}
+                    >
+                      <span>Visit Website</span>
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  ) : (
+                    <span className="text-[10px] font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                      No Website Detected
+                    </span>
+                  )}
                 </div>
+                {selectedLead.websiteUrl && (
+                  <div className="text-[11px] text-slate-500 font-mono flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-slate-200 break-all">
+                    <span className="text-slate-400 font-sans font-medium">URL:</span>
+                    <a
+                      href={selectedLead.websiteUrl.startsWith('http') ? selectedLead.websiteUrl : `https://${selectedLead.websiteUrl}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-sky-700 hover:underline font-semibold"
+                    >
+                      {selectedLead.websiteUrl}
+                    </a>
+                  </div>
+                )}
                 <p className="text-slate-600 leading-relaxed text-[11px]">{selectedLead.auditSummary}</p>
               </div>
 
