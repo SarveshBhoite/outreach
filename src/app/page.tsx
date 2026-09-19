@@ -710,48 +710,36 @@ export default function OutreachDashboard() {
     }
   };
 
-  // Render Status Badge
-  const getStatusBadge = (status?: string) => {
-    switch (status) {
-      case 'CONTACTED':
-        return <span className="inline-flex items-center gap-1 text-[10px] font-bold text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded-full border border-sky-500/30">CONTACTED</span>;
-      case 'DONE':
-        return <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">DONE</span>;
-      case 'CLOSED':
-        return <span className="inline-flex items-center gap-1 text-[10px] font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-full border border-purple-500/30">CLOSED</span>;
-      default:
-        return <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30">PENDING</span>;
-    }
-  };
-
   return (
-    <div className="flex h-screen bg-slate-950 text-slate-100 overflow-hidden font-sans">
-      {/* Collapsible Sidebar Drawer */}
+    <div className="flex h-screen bg-slate-50 text-slate-900 overflow-hidden font-sans">
+      {/* Sidebar: Uniform Solid Brand Theme Background (#BAE6FD) matching automationcrm */}
       <aside
         className={`${
           isSidebarOpen ? 'w-64' : 'w-16'
-        } transition-all duration-300 ease-in-out border-r border-slate-800 bg-slate-900/80 backdrop-blur-md flex flex-col justify-between p-3 shrink-0 z-20`}
+        } transition-all duration-300 ease-in-out border-r border-sky-300 bg-[#BAE6FD] flex flex-col justify-between p-3 shrink-0 z-20 shadow-xs`}
       >
         <div>
           {/* Logo & Toggle Header */}
-          <div className="flex items-center justify-between px-1 py-3 mb-4">
+          <div className="flex items-center justify-between px-1 py-2 mb-3">
             <div className="flex items-center gap-3 overflow-hidden">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0">
-                <Zap className="h-6 w-6 text-slate-950 font-bold" />
+              <div className="h-10 w-10 rounded-2xl bg-white border border-sky-300 flex items-center justify-center shadow-xs shrink-0 p-0.5">
+                <div className="h-full w-full rounded-xl bg-gradient-to-tr from-sky-600 to-sky-400 flex items-center justify-center text-white">
+                  <Zap className="h-5 w-5" />
+                </div>
               </div>
               {isSidebarOpen && (
                 <div className="truncate">
-                  <h1 className="text-base font-bold tracking-tight text-white flex items-center gap-1.5 truncate">
-                    OutreachAI <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/30">CRM</span>
+                  <h1 className="text-base font-black tracking-tight text-slate-900 flex items-center gap-1.5 truncate">
+                    OutreachAI <span className="text-[10px] bg-sky-600 text-white font-bold px-1.5 py-0.5 rounded">CRM</span>
                   </h1>
-                  <p className="text-[11px] text-slate-400 truncate">Pan-India Sales Engine</p>
+                  <p className="text-[11px] text-slate-600 font-semibold truncate">Jisnu Outreach Hub</p>
                 </div>
               )}
             </div>
 
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition shrink-0"
+              className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-white/60 transition shrink-0"
               title={isSidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
             >
               {isSidebarOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeft className="h-4 w-4" />}
@@ -760,32 +748,32 @@ export default function OutreachDashboard() {
 
           {/* Navigation Links */}
           <nav className="space-y-1.5">
-            {/* 1. Command Center (Visible to ALL) */}
+            {/* 1. Command Center */}
             <button
               onClick={() => setActiveTab('overview')}
               title={!isSidebarOpen ? 'Command Center' : undefined}
               className={`w-full flex items-center ${
                 isSidebarOpen ? 'gap-3 px-3' : 'justify-center px-0'
-              } py-2.5 rounded-lg text-sm font-medium transition-all ${
+              } py-2.5 rounded-xl text-xs font-bold transition-all ${
                 activeTab === 'overview'
-                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                  ? 'bg-gradient-to-r from-sky-600 to-sky-500 text-white shadow-md shadow-sky-600/25 scale-[1.02]'
+                  : 'text-slate-700 hover:text-sky-900 hover:bg-white/80'
               }`}
             >
               <Activity className="h-4 w-4 shrink-0" />
               {isSidebarOpen && <span className="truncate">Command Center</span>}
             </button>
 
-            {/* 2. Leads CRM (Visible to ALL) */}
+            {/* 2. Leads CRM */}
             <button
               onClick={() => setActiveTab('leads')}
               title={!isSidebarOpen ? 'Lead CRM & Audits' : undefined}
               className={`w-full flex items-center ${
                 isSidebarOpen ? 'gap-3 px-3' : 'justify-center px-0'
-              } py-2.5 rounded-lg text-sm font-medium transition-all ${
+              } py-2.5 rounded-xl text-xs font-bold transition-all ${
                 activeTab === 'leads'
-                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                  ? 'bg-gradient-to-r from-sky-600 to-sky-500 text-white shadow-md shadow-sky-600/25 scale-[1.02]'
+                  : 'text-slate-700 hover:text-sky-900 hover:bg-white/80'
               }`}
             >
               <Building2 className="h-4 w-4 shrink-0" />
@@ -793,7 +781,7 @@ export default function OutreachDashboard() {
                 <>
                   <span className="truncate">Lead CRM & Audits</span>
                   {leads.length > 0 && (
-                    <span className="ml-auto text-[11px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full border border-slate-700">
+                    <span className="ml-auto text-[10px] bg-white text-sky-800 font-bold px-2 py-0.5 rounded-full border border-sky-200">
                       {leads.length}
                     </span>
                   )}
@@ -806,7 +794,7 @@ export default function OutreachDashboard() {
               <>
                 <div className="pt-2 pb-1">
                   {isSidebarOpen && (
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 px-3">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 px-3">
                       Admin Portal
                     </span>
                   )}
@@ -818,10 +806,10 @@ export default function OutreachDashboard() {
                   title={!isSidebarOpen ? 'Team & Users' : undefined}
                   className={`w-full flex items-center ${
                     isSidebarOpen ? 'gap-3 px-3' : 'justify-center px-0'
-                  } py-2.5 rounded-lg text-sm font-medium transition-all ${
+                  } py-2.5 rounded-xl text-xs font-bold transition-all ${
                     activeTab === 'team'
-                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                      ? 'bg-gradient-to-r from-sky-600 to-sky-500 text-white shadow-md shadow-sky-600/25 scale-[1.02]'
+                      : 'text-slate-700 hover:text-sky-900 hover:bg-white/80'
                   }`}
                 >
                   <Users className="h-4 w-4 shrink-0" />
@@ -834,10 +822,10 @@ export default function OutreachDashboard() {
                   title={!isSidebarOpen ? 'WhatsApp Sandbox' : undefined}
                   className={`w-full flex items-center ${
                     isSidebarOpen ? 'gap-3 px-3' : 'justify-center px-0'
-                  } py-2.5 rounded-lg text-sm font-medium transition-all ${
+                  } py-2.5 rounded-xl text-xs font-bold transition-all ${
                     activeTab === 'sandbox'
-                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                      ? 'bg-gradient-to-r from-sky-600 to-sky-500 text-white shadow-md shadow-sky-600/25 scale-[1.02]'
+                      : 'text-slate-700 hover:text-sky-900 hover:bg-white/80'
                   }`}
                 >
                   <MessageSquare className="h-4 w-4 shrink-0" />
@@ -850,10 +838,10 @@ export default function OutreachDashboard() {
                   title={!isSidebarOpen ? 'Settings & CRM Gateway' : undefined}
                   className={`w-full flex items-center ${
                     isSidebarOpen ? 'gap-3 px-3' : 'justify-center px-0'
-                  } py-2.5 rounded-lg text-sm font-medium transition-all ${
+                  } py-2.5 rounded-xl text-xs font-bold transition-all ${
                     activeTab === 'settings'
-                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                      ? 'bg-gradient-to-r from-sky-600 to-sky-500 text-white shadow-md shadow-sky-600/25 scale-[1.02]'
+                      : 'text-slate-700 hover:text-sky-900 hover:bg-white/80'
                   }`}
                 >
                   <Sliders className="h-4 w-4 shrink-0" />
@@ -865,17 +853,17 @@ export default function OutreachDashboard() {
         </div>
 
         {/* Sidebar Footer: User Card */}
-        <div className="pt-3 border-t border-slate-800/80">
+        <div className="pt-3 border-t border-sky-300">
           {isSidebarOpen ? (
-            <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs flex items-center justify-between">
+            <div className="p-2.5 rounded-xl bg-white/90 border border-sky-200/80 text-xs flex items-center justify-between shadow-2xs">
               <div className="truncate pr-2">
-                <div className="font-semibold text-white truncate flex items-center gap-1.5">
-                  <UserCheck className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                <div className="font-bold text-slate-900 truncate flex items-center gap-1.5">
+                  <UserCheck className="h-3.5 w-3.5 text-sky-600 shrink-0" />
                   <span className="truncate">{currentUser?.name || 'Sales Rep'}</span>
                 </div>
-                <div className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
+                <div className="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5">
                   <span className={`px-1.5 py-0.2 rounded font-bold text-[9px] ${
-                    currentUser?.role === 'ADMIN' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                    currentUser?.role === 'ADMIN' ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
                   }`}>
                     {currentUser?.role || 'SALES'}
                   </span>
@@ -884,7 +872,7 @@ export default function OutreachDashboard() {
               </div>
               <button
                 onClick={handleLogout}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-950/30 transition shrink-0"
+                className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition shrink-0"
                 title="Sign out"
               >
                 <LogOut className="h-4 w-4" />
@@ -894,7 +882,7 @@ export default function OutreachDashboard() {
             <div className="flex justify-center">
               <button
                 onClick={handleLogout}
-                className="p-2 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-950/30 transition"
+                className="p-2 rounded-lg text-slate-600 hover:text-rose-600 hover:bg-white/80 transition"
                 title="Sign out"
               >
                 <LogOut className="h-4 w-4" />
@@ -904,47 +892,53 @@ export default function OutreachDashboard() {
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <main className="flex-1 flex flex-col overflow-y-auto bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 min-w-0">
+      {/* Main Content Area: Clean slate-50 background matching automationcrm */}
+      <main className="flex-1 flex flex-col overflow-y-auto bg-slate-50 min-w-0">
         {/* Top App Header */}
-        <header className="h-16 border-b border-slate-800 px-6 flex items-center justify-between bg-slate-900/50 backdrop-blur-md sticky top-0 z-10">
+        <header className="h-16 border-b border-slate-200/90 px-6 flex items-center justify-between bg-white/90 backdrop-blur-md sticky top-0 z-10 shadow-2xs">
           <div className="flex items-center gap-3">
             {!isSidebarOpen && (
               <button
                 onClick={() => setIsSidebarOpen(true)}
-                className="p-1.5 rounded-lg border border-slate-800 bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 transition"
+                className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition"
                 title="Open Sidebar"
               >
-                <PanelLeft className="h-4 w-4 text-emerald-400" />
+                <PanelLeft className="h-4 w-4 text-sky-600" />
               </button>
             )}
             <div>
-              <h2 className="text-base font-semibold text-white capitalize">
-                {activeTab === 'overview' && 'Autonomous Command Center'}
-                {activeTab === 'leads' && (currentUser?.role === 'ADMIN' ? 'All Team Leads & Digital Audits' : 'My Scraped Leads & Outreach Pipeline')}
-                {activeTab === 'team' && 'Team & User Management (Admin)'}
-                {activeTab === 'sandbox' && 'WhatsApp Dispatch Sandbox'}
-                {activeTab === 'settings' && 'System Configuration & CRM API Gateway'}
-              </h2>
-              <p className="text-xs text-slate-400">
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-black text-slate-900 capitalize">
+                  {activeTab === 'overview' && 'Autonomous Command Center'}
+                  {activeTab === 'leads' && (currentUser?.role === 'ADMIN' ? 'All Team Leads & Digital Audits' : 'My Scraped Leads & Outreach Pipeline')}
+                  {activeTab === 'team' && 'Team & User Management (Admin)'}
+                  {activeTab === 'sandbox' && 'WhatsApp Dispatch Sandbox'}
+                  {activeTab === 'settings' && 'System Configuration & CRM API Gateway'}
+                </h2>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Live Sync
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 font-medium">
                 {currentUser?.role === 'ADMIN' ? '👑 Admin Mode: Full Team Oversight & Control' : `Sales Rep: ${currentUser?.name || currentUser?.email}`}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {/* Auto Dispatch Switch (Admin Only) */}
             {currentUser?.role === 'ADMIN' && (
-              <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg shadow-sm">
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl shadow-2xs">
                 <input
                   type="checkbox"
                   id="globalAutoDispatchHeader"
                   checked={settings.globalAutoDispatch}
                   onChange={(e) => handleToggleGlobalAutoDispatch(e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-700 bg-slate-950 text-emerald-500 focus:ring-emerald-400 cursor-pointer"
+                  className="h-4 w-4 rounded border-slate-300 bg-white text-sky-600 focus:ring-sky-500 cursor-pointer"
                 />
-                <label htmlFor="globalAutoDispatchHeader" className="text-xs font-semibold text-slate-200 cursor-pointer flex items-center gap-1.5">
-                  <Send className="h-3 w-3 text-emerald-400" />
+                <label htmlFor="globalAutoDispatchHeader" className="text-xs font-bold text-slate-700 cursor-pointer flex items-center gap-1.5">
+                  <Send className="h-3 w-3 text-sky-600" />
                   Auto-Dispatch
                 </label>
               </div>
@@ -953,7 +947,7 @@ export default function OutreachDashboard() {
             <button
               onClick={() => fetchDashboardData(currentPage)}
               disabled={loading}
-              className="p-2 rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition"
+              className="p-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 shadow-2xs transition"
               title="Refresh Data"
             >
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
@@ -962,20 +956,20 @@ export default function OutreachDashboard() {
             <button
               onClick={() => handleTriggerAutopilot(false)}
               disabled={runningAutopilot}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition shadow-lg ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer ${
                 runningAutopilot
-                  ? 'bg-slate-800 text-slate-400 cursor-not-allowed'
-                  : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-emerald-500/20'
+                  ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-sky-600 to-sky-500 hover:from-sky-500 hover:to-sky-600 text-white shadow-sky-500/20'
               }`}
             >
               {runningAutopilot ? (
                 <>
-                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
                   Scraping Leads...
                 </>
               ) : (
                 <>
-                  <Sparkles className="h-4 w-4" />
+                  <Sparkles className="h-3.5 w-3.5 text-amber-300" />
                   Launch Daily Autopilot
                 </>
               )}
@@ -985,43 +979,63 @@ export default function OutreachDashboard() {
 
         {/* Tab 1: Overview / Command Center */}
         {activeTab === 'overview' && (
-          <div className="p-6 space-y-6">
-            {/* Stat Cards */}
+          <div className="p-6 space-y-6 max-w-7xl mx-auto w-full">
+            {/* Stat Cards matching automationcrm */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 shadow-sm relative overflow-hidden">
+              {/* Card 1: Total Leads */}
+              <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs flex flex-col justify-between transition-all hover:shadow-sm hover:border-sky-300 group">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-slate-400">{currentUser?.role === 'ADMIN' ? 'Total Leads in System' : 'My Scraped Leads'}</span>
-                  <Search className="h-4 w-4 text-emerald-400" />
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{currentUser?.role === 'ADMIN' ? 'Total Leads in System' : 'My Scraped Leads'}</span>
+                  <div className="h-8 w-8 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center border border-sky-100 shadow-2xs group-hover:scale-105 transition-transform">
+                    <Search className="h-4 w-4" />
+                  </div>
                 </div>
-                <div className="text-2xl font-bold text-white mt-2">{stats.totalLeads}</div>
-                <div className="text-[11px] text-slate-500 mt-1">Sourced via Google Places</div>
+                <div className="mt-3">
+                  <div className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">{stats.totalLeads}</div>
+                  <div className="text-[11px] text-slate-500 font-medium mt-1">Sourced via Google Places</div>
+                </div>
               </div>
 
-              <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 shadow-sm relative overflow-hidden">
+              {/* Card 2: Pending Contact */}
+              <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs flex flex-col justify-between transition-all hover:shadow-sm hover:border-amber-300 group">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-slate-400">Leads Pending Contact</span>
-                  <Clock className="h-4 w-4 text-amber-400" />
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Pending Outreach</span>
+                  <div className="h-8 w-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100 shadow-2xs group-hover:scale-105 transition-transform">
+                    <Clock className="h-4 w-4" />
+                  </div>
                 </div>
-                <div className="text-2xl font-bold text-white mt-2">{stats.totalPending}</div>
-                <div className="text-[11px] text-slate-500 mt-1">Waiting for initial outreach</div>
+                <div className="mt-3">
+                  <div className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">{stats.totalPending}</div>
+                  <div className="text-[11px] text-amber-700 font-semibold mt-1">Waiting for initial pitch</div>
+                </div>
               </div>
 
-              <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 shadow-sm relative overflow-hidden">
+              {/* Card 3: Contacted / In Progress */}
+              <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs flex flex-col justify-between transition-all hover:shadow-sm hover:border-emerald-300 group">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-slate-400">Contacted / In Progress</span>
-                  <Send className="h-4 w-4 text-sky-400" />
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Contacted / Dispatched</span>
+                  <div className="h-8 w-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 shadow-2xs group-hover:scale-105 transition-transform">
+                    <Send className="h-4 w-4" />
+                  </div>
                 </div>
-                <div className="text-2xl font-bold text-white mt-2">{stats.totalContacted}</div>
-                <div className="text-[11px] text-slate-500 mt-1">Outreach message sent</div>
+                <div className="mt-3">
+                  <div className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">{stats.totalContacted}</div>
+                  <div className="text-[11px] text-emerald-700 font-semibold mt-1">Logged in WhatsApp CRM</div>
+                </div>
               </div>
 
-              <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 shadow-sm relative overflow-hidden">
+              {/* Card 4: Deals Closed */}
+              <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs flex flex-col justify-between transition-all hover:shadow-sm hover:border-purple-300 group">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-slate-400">Deals Closed</span>
-                  <CheckCircle2 className="h-4 w-4 text-purple-400" />
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Deals Closed</span>
+                  <div className="h-8 w-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100 shadow-2xs group-hover:scale-105 transition-transform">
+                    <CheckCircle2 className="h-4 w-4" />
+                  </div>
                 </div>
-                <div className="text-2xl font-bold text-white mt-2">{stats.totalClosed}</div>
-                <div className="text-[11px] text-slate-500 mt-1">Successfully converted leads</div>
+                <div className="mt-3">
+                  <div className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">{stats.totalClosed}</div>
+                  <div className="text-[11px] text-purple-700 font-semibold mt-1">Successfully converted</div>
+                </div>
               </div>
             </div>
 
@@ -1029,54 +1043,56 @@ export default function OutreachDashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               {/* Left Column: Targeted Run Controller */}
               <div className="lg:col-span-5 space-y-4">
-                <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
+                <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-xs space-y-4">
                   <div className="flex items-center gap-2">
-                    <Sparkles className="h-5 w-5 text-emerald-400" />
-                    <h3 className="text-sm font-semibold text-white">Manual / Custom Campaign Trigger</h3>
+                    <div className="h-8 w-8 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center border border-sky-100">
+                      <Sparkles className="h-4 w-4" />
+                    </div>
+                    <h3 className="text-sm font-bold text-slate-900">Custom Campaign Scraper</h3>
                   </div>
-                  <p className="text-xs text-slate-400 leading-relaxed">
+                  <p className="text-xs text-slate-500 leading-relaxed">
                     Target a specific business niche & locality. Scraped leads will automatically be tagged as owned by <strong>{currentUser?.name || currentUser?.email}</strong>.
                   </p>
 
                   <div className="space-y-3 pt-1">
                     <div>
-                      <label className="text-xs font-medium text-slate-300 block mb-1">Target Niche / Category</label>
+                      <label className="text-xs font-bold text-slate-700 block mb-1">Target Niche / Category</label>
                       <input
                         type="text"
                         placeholder="e.g. Interior Designers, Cafes, Dental Clinics"
                         value={customNiche}
                         onChange={(e) => setCustomNiche(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-emerald-500"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:bg-white focus:ring-2 focus:ring-sky-100"
                       />
                     </div>
 
                     <div>
-                      <label className="text-xs font-medium text-slate-300 block mb-1">Target City / Locality</label>
+                      <label className="text-xs font-bold text-slate-700 block mb-1">Target City / Locality</label>
                       <input
                         type="text"
                         placeholder="e.g. Indiranagar Bangalore, Andheri West Mumbai"
                         value={customLocation}
                         onChange={(e) => setCustomLocation(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-emerald-500"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:bg-white focus:ring-2 focus:ring-sky-100"
                       />
                     </div>
 
                     <div>
-                      <label className="text-xs font-medium text-slate-300 block mb-1">Scrape Volume Limit</label>
+                      <label className="text-xs font-bold text-slate-700 block mb-1">Scrape Volume Limit</label>
                       <input
                         type="number"
                         min="5"
                         max="60"
                         value={customScrapeLimit}
                         onChange={(e) => setCustomScrapeLimit(parseInt(e.target.value, 10) || 20)}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 font-mono"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 font-mono focus:outline-none focus:border-sky-500 focus:bg-white focus:ring-2 focus:ring-sky-100"
                       />
                     </div>
 
                     <button
                       onClick={() => handleTriggerAutopilot(true)}
                       disabled={runningAutopilot || !customNiche.trim() || !customLocation.trim()}
-                      className="w-full py-2.5 px-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-lg text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                      className="w-full py-2.5 px-4 bg-gradient-to-r from-sky-600 to-sky-500 hover:from-sky-500 hover:to-sky-600 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-2 shadow-sm shadow-sky-500/20 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                     >
                       {runningAutopilot ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
                       Start Custom Scraping Run
@@ -1087,23 +1103,23 @@ export default function OutreachDashboard() {
 
               {/* Right Column: Execution Terminal */}
               <div className="lg:col-span-7">
-                <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 h-[380px] flex flex-col shadow-inner">
-                  <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div className="p-6 rounded-3xl bg-white border border-slate-200/90 h-[400px] flex flex-col shadow-xs">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                     <div className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                      <h3 className="text-sm font-semibold text-white">Live Pipeline Execution Logs</h3>
+                      <span className="h-2 w-2 rounded-full bg-sky-500 animate-pulse"></span>
+                      <h3 className="text-sm font-bold text-slate-900">Live Pipeline Execution Logs</h3>
                     </div>
-                    <span className="text-[11px] text-slate-500">Auto-updating</span>
+                    <span className="text-[11px] text-slate-400 font-medium">Realtime updates</span>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto mt-3 space-y-1.5 font-mono text-xs text-slate-300">
+                  <div className="flex-1 overflow-y-auto mt-3 space-y-1.5 font-mono text-xs text-slate-700">
                     {pipelineLogs.length === 0 ? (
-                      <div className="text-slate-600 text-center py-16">
+                      <div className="text-slate-400 text-center py-20 font-sans text-xs">
                         No active run in progress. Click &quot;Launch Daily Autopilot&quot; to begin.
                       </div>
                     ) : (
                       pipelineLogs.map((log, idx) => (
-                        <div key={idx} className="p-1.5 rounded bg-slate-950/60 border border-slate-800/50">
+                        <div key={idx} className="p-2 rounded-lg bg-slate-50 border border-slate-200/70 text-slate-800">
                           {log}
                         </div>
                       ))
@@ -1117,14 +1133,14 @@ export default function OutreachDashboard() {
 
         {/* Tab 2: Lead CRM Table, Status & Remarks */}
         {activeTab === 'leads' && (
-          <div className="p-6 space-y-4">
+          <div className="p-6 space-y-4 max-w-7xl mx-auto w-full">
             {/* Header & Filter Controls */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/80 p-4 rounded-2xl border border-slate-800">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-3xl border border-slate-200/90 shadow-xs">
               <div>
-                <h3 className="text-sm font-semibold text-white">
+                <h3 className="text-sm font-bold text-slate-900">
                   {currentUser?.role === 'ADMIN' ? 'All Team Scraped Leads' : 'My Scraped Leads & Notes'}
                 </h3>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-500">
                   Manage lead status, track follow-up remarks, and inspect digital audits.
                 </p>
               </div>
@@ -1132,19 +1148,19 @@ export default function OutreachDashboard() {
               <div className="flex items-center gap-2.5 flex-wrap">
                 {/* Admin Sales Rep Selector */}
                 {currentUser?.role === 'ADMIN' && (
-                  <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-lg text-xs">
-                    <span className="text-slate-400 font-medium">Rep:</span>
+                  <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-xs">
+                    <span className="text-slate-500 font-semibold">Rep:</span>
                     <select
                       value={adminUserFilter}
                       onChange={(e) => {
                         setAdminUserFilter(e.target.value);
                         fetchDashboardData(1, leadStatusFilter, e.target.value);
                       }}
-                      className="bg-transparent text-slate-200 font-semibold focus:outline-none cursor-pointer"
+                      className="bg-transparent text-slate-800 font-bold focus:outline-none cursor-pointer"
                     >
-                      <option value="ALL" className="bg-slate-900">All Team Members</option>
+                      <option value="ALL">All Team Members</option>
                       {teamMembers.map((tm) => (
-                        <option key={tm.id} value={tm.id} className="bg-slate-900">
+                        <option key={tm.id} value={tm.id}>
                           {tm.name} ({tm.role})
                         </option>
                       ))}
@@ -1153,8 +1169,8 @@ export default function OutreachDashboard() {
                 )}
 
                 {/* Status Filter */}
-                <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-lg text-xs">
-                  <span className="text-slate-400 font-medium">Status:</span>
+                <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-xs">
+                  <span className="text-slate-500 font-semibold">Status:</span>
                   <select
                     value={leadStatusFilter}
                     onChange={(e) => {
@@ -1162,20 +1178,20 @@ export default function OutreachDashboard() {
                       setLeadStatusFilter(newStatus);
                       fetchDashboardData(1, newStatus, adminUserFilter);
                     }}
-                    className="bg-transparent text-slate-200 font-semibold focus:outline-none cursor-pointer"
+                    className="bg-transparent text-slate-800 font-bold focus:outline-none cursor-pointer"
                   >
-                    <option value="ALL" className="bg-slate-900">All Statuses</option>
-                    <option value="PENDING" className="bg-slate-900">🟡 Pending</option>
-                    <option value="CONTACTED" className="bg-slate-900">🔵 Contacted</option>
-                    <option value="DONE" className="bg-slate-900">🟢 Done</option>
-                    <option value="CLOSED" className="bg-slate-900">🟣 Closed</option>
+                    <option value="ALL">All Statuses</option>
+                    <option value="PENDING">🟡 Pending</option>
+                    <option value="CONTACTED">🔵 Contacted</option>
+                    <option value="DONE">🟢 Done</option>
+                    <option value="CLOSED">🟣 Closed</option>
                   </select>
                 </div>
 
                 <button
                   onClick={() => setIsExportModalOpen(true)}
                   disabled={leads.length === 0}
-                  className="px-3.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-md shadow-emerald-500/20 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-sky-600 to-sky-500 hover:from-sky-500 hover:to-sky-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm shadow-sky-500/20 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   <Download className="h-3.5 w-3.5" /> Export Leads
                 </button>
@@ -1183,27 +1199,27 @@ export default function OutreachDashboard() {
             </div>
 
             {/* Leads Table */}
-            <div className="border border-slate-800 rounded-2xl overflow-hidden bg-slate-900/80 shadow-lg">
+            <div className="border border-slate-200/90 rounded-3xl overflow-hidden bg-white shadow-xs">
               <div className="overflow-x-auto no-scrollbar">
-                <table className="w-full text-left text-xs text-slate-300">
-                  <thead className="bg-slate-950/80 text-slate-400 border-b border-slate-800 uppercase tracking-wider font-semibold">
+                <table className="w-full text-left text-xs text-slate-700">
+                  <thead className="bg-slate-50/80 text-slate-500 border-b border-slate-200 uppercase tracking-wider font-bold">
                     <tr>
-                      <th className="px-4 py-3">Business Name</th>
-                      <th className="px-4 py-3">Sales Status</th>
-                      <th className="px-4 py-3 min-w-[200px]">Remarks / Notes</th>
-                      {currentUser?.role === 'ADMIN' && <th className="px-4 py-3">Scraped By</th>}
-                      <th className="px-4 py-3">Niche & Locality</th>
-                      <th className="px-4 py-3">Phone (WhatsApp)</th>
-                      <th className="px-4 py-3">Website Audit</th>
-                      <th className="px-4 py-3">Pitch Angle</th>
-                      <th className="px-4 py-3">Template Sent?</th>
-                      <th className="px-4 py-3 text-right">Actions</th>
+                      <th className="px-4 py-3.5">Business Name</th>
+                      <th className="px-4 py-3.5">Sales Status</th>
+                      <th className="px-4 py-3.5 min-w-[200px]">Remarks / Notes</th>
+                      {currentUser?.role === 'ADMIN' && <th className="px-4 py-3.5">Scraped By</th>}
+                      <th className="px-4 py-3.5">Niche & Locality</th>
+                      <th className="px-4 py-3.5">Phone (WhatsApp)</th>
+                      <th className="px-4 py-3.5">Website Audit</th>
+                      <th className="px-4 py-3.5">Pitch Angle</th>
+                      <th className="px-4 py-3.5">Template Sent?</th>
+                      <th className="px-4 py-3.5 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/60">
+                  <tbody className="divide-y divide-slate-100">
                     {leads.length === 0 ? (
                       <tr>
-                        <td colSpan={currentUser?.role === 'ADMIN' ? 10 : 9} className="text-center py-12 text-slate-500">
+                        <td colSpan={currentUser?.role === 'ADMIN' ? 10 : 9} className="text-center py-14 text-slate-400">
                           No leads found matching your criteria.
                         </td>
                       </tr>
@@ -1211,21 +1227,21 @@ export default function OutreachDashboard() {
                       leads.map((lead) => (
                         <tr
                           key={lead.id}
-                          className="hover:bg-slate-800/40 transition"
+                          className="hover:bg-slate-50/70 transition"
                         >
                           {/* Business Name */}
-                          <td className="px-4 py-3 font-medium text-white">
+                          <td className="px-4 py-3 font-semibold text-slate-900">
                             <div className="flex items-center gap-1.5">
                               <span>{lead.businessName}</span>
                               {lead.googleRating && (
-                                <span className="flex items-center text-[10px] text-amber-400 font-normal">
-                                  <Star className="h-3 w-3 fill-amber-400 inline mr-0.5" />
+                                <span className="flex items-center text-[10px] text-amber-500 font-bold">
+                                  <Star className="h-3 w-3 fill-amber-400 text-amber-500 inline mr-0.5" />
                                   {lead.googleRating}
                                 </span>
                               )}
                             </div>
                             {lead.email && (
-                              <div className="text-[10px] text-sky-400 font-mono truncate max-w-[160px]" title={lead.email}>
+                              <div className="text-[10px] text-sky-700 font-mono truncate max-w-[160px]" title={lead.email}>
                                 {lead.email}
                               </div>
                             )}
@@ -1237,20 +1253,20 @@ export default function OutreachDashboard() {
                               value={lead.leadStatus || 'PENDING'}
                               onChange={(e) => handleUpdateLeadStatus(lead.id, e.target.value)}
                               disabled={savingLeadId === lead.id}
-                              className={`text-xs font-semibold px-2 py-1 rounded-lg border focus:outline-none cursor-pointer transition ${
+                              className={`text-xs font-bold px-2 py-1 rounded-lg border focus:outline-none cursor-pointer transition ${
                                 (lead.leadStatus || 'PENDING') === 'PENDING'
-                                  ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+                                  ? 'bg-amber-50 border-amber-200 text-amber-700'
                                   : (lead.leadStatus || 'PENDING') === 'CONTACTED'
-                                  ? 'bg-sky-500/10 border-sky-500/30 text-sky-300'
+                                  ? 'bg-sky-50 border-sky-200 text-sky-700'
                                   : (lead.leadStatus || 'PENDING') === 'DONE'
-                                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-                                  : 'bg-purple-500/10 border-purple-500/30 text-purple-300'
+                                  ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                                  : 'bg-purple-50 border-purple-200 text-purple-700'
                               }`}
                             >
-                              <option value="PENDING" className="bg-slate-900 text-amber-300">🟡 Pending</option>
-                              <option value="CONTACTED" className="bg-slate-900 text-sky-300">🔵 Contacted</option>
-                              <option value="DONE" className="bg-slate-900 text-emerald-300">🟢 Done</option>
-                              <option value="CLOSED" className="bg-slate-900 text-purple-300">🟣 Closed</option>
+                              <option value="PENDING">🟡 Pending</option>
+                              <option value="CONTACTED">🔵 Contacted</option>
+                              <option value="DONE">🟢 Done</option>
+                              <option value="CLOSED">🟣 Closed</option>
                             </select>
                           </td>
 
@@ -1263,7 +1279,7 @@ export default function OutreachDashboard() {
                                   value={remarkInput}
                                   onChange={(e) => setRemarkInput(e.target.value)}
                                   placeholder="Add notes..."
-                                  className="w-full bg-slate-950 border border-emerald-500/50 rounded px-2 py-1 text-xs text-slate-100 focus:outline-none"
+                                  className="w-full bg-slate-50 border border-sky-400 rounded-lg px-2 py-1 text-xs text-slate-900 focus:outline-none focus:bg-white"
                                   autoFocus
                                   onKeyDown={(e) => {
                                     if (e.key === 'Enter') handleSaveLeadRemark(lead.id);
@@ -1272,7 +1288,7 @@ export default function OutreachDashboard() {
                                 />
                                 <button
                                   onClick={() => handleSaveLeadRemark(lead.id)}
-                                  className="p-1 rounded bg-emerald-500 text-slate-950 hover:bg-emerald-400"
+                                  className="p-1 rounded-lg bg-sky-600 text-white hover:bg-sky-500"
                                   title="Save note"
                                 >
                                   <Check className="h-3.5 w-3.5" />
@@ -1284,18 +1300,18 @@ export default function OutreachDashboard() {
                                   setEditingRemarkId(lead.id);
                                   setRemarkInput(lead.remarks || '');
                                 }}
-                                className="group flex items-center justify-between gap-1 p-1 rounded hover:bg-slate-800/80 cursor-pointer text-xs"
+                                className="group flex items-center justify-between gap-1 p-1 rounded-lg hover:bg-slate-100 cursor-pointer text-xs"
                                 title="Click to edit remark"
                               >
-                                <span className={lead.remarks ? 'text-slate-200' : 'text-slate-500 italic'}>
+                                <span className={lead.remarks ? 'text-slate-800 font-medium' : 'text-slate-400 italic'}>
                                   {lead.remarks || '+ Add notes...'}
                                 </span>
-                                <Edit3 className="h-3 w-3 text-slate-600 group-hover:text-slate-300 opacity-0 group-hover:opacity-100 shrink-0" />
+                                <Edit3 className="h-3 w-3 text-slate-400 group-hover:text-slate-600 opacity-0 group-hover:opacity-100 shrink-0" />
                               </div>
                             )}
                             {lead.lastUpdatedBy && (
-                              <div className="text-[10px] text-slate-500 mt-0.5">
-                                Updated by: <span className="text-slate-400">{lead.lastUpdatedBy.name}</span>
+                              <div className="text-[10px] text-slate-400 mt-0.5">
+                                Updated by: <span className="text-slate-600 font-medium">{lead.lastUpdatedBy.name}</span>
                               </div>
                             )}
                           </td>
@@ -1303,32 +1319,32 @@ export default function OutreachDashboard() {
                           {/* Admin Only: Scraped By */}
                           {currentUser?.role === 'ADMIN' && (
                             <td className="px-4 py-3">
-                              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-300 bg-slate-800 px-2 py-0.5 rounded border border-slate-700 truncate max-w-[140px]" title={lead.user?.email || 'Unassigned'}>
-                                <UserCheck className="h-3 w-3 text-emerald-400" />
+                              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-700 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200 truncate max-w-[140px]" title={lead.user?.email || 'Unassigned'}>
+                                <UserCheck className="h-3 w-3 text-sky-600" />
                                 {lead.user?.name || lead.user?.email || 'Unassigned'}
                               </span>
                             </td>
                           )}
 
                           {/* Niche & Location */}
-                          <td className="px-4 py-3 text-slate-400 truncate max-w-[150px]">
-                            <div className="truncate text-slate-300">{lead.category}</div>
+                          <td className="px-4 py-3 text-slate-500 truncate max-w-[150px]">
+                            <div className="truncate text-slate-800 font-medium">{lead.category}</div>
                             <div className="text-[10px] text-slate-500 truncate">{lead.city || 'India'}</div>
                           </td>
 
                           {/* Phone */}
-                          <td className="px-4 py-3 font-mono text-emerald-400">
+                          <td className="px-4 py-3 font-mono font-semibold text-sky-700">
                             {lead.formattedPhone || lead.phoneNumber || 'N/A'}
                           </td>
 
                           {/* Website Audit */}
                           <td className="px-4 py-3">
                             {lead.hasWebsite ? (
-                              <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                                 <Globe className="h-3 w-3" /> Active
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 text-[11px] text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20">
+                              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
                                 <AlertTriangle className="h-3 w-3" /> None
                               </span>
                             )}
@@ -1336,7 +1352,7 @@ export default function OutreachDashboard() {
 
                           {/* Pitch Angle */}
                           <td className="px-4 py-3">
-                            <span className="text-[11px] font-medium text-emerald-300 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-500/20 truncate max-w-[160px] block">
+                            <span className="text-[11px] font-semibold text-sky-800 bg-sky-50 px-2.5 py-0.5 rounded-full border border-sky-200 truncate max-w-[160px] block">
                               {lead.pitchAngle || 'Web & Digital Presence'}
                             </span>
                           </td>
@@ -1344,11 +1360,11 @@ export default function OutreachDashboard() {
                           {/* Template Sent */}
                           <td className="px-4 py-3">
                             {lead.isTemplateSent ? (
-                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
                                 <CheckCircle2 className="h-3 w-3" /> SENT
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-400 bg-slate-800 px-2 py-0.5 rounded-full border border-slate-700">
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
                                 <Clock className="h-3 w-3" /> PENDING
                               </span>
                             )}
@@ -1358,7 +1374,7 @@ export default function OutreachDashboard() {
                           <td className="px-4 py-3 text-right">
                             <button
                               onClick={() => setSelectedLead(lead)}
-                              className="text-xs text-emerald-400 hover:text-emerald-300 font-medium underline"
+                              className="text-xs text-sky-600 hover:text-sky-800 font-bold underline cursor-pointer"
                             >
                               Inspect Pitch
                             </button>
@@ -1371,17 +1387,17 @@ export default function OutreachDashboard() {
               </div>
 
               {/* Pagination Bar */}
-              <div className="px-5 py-3.5 bg-slate-950/80 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
+              <div className="px-5 py-3.5 bg-slate-50/80 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
                 <div className="flex items-center gap-2">
                   <span>
-                    Showing <span className="text-white font-semibold">{leads.length > 0 ? (currentPage - 1) * 20 + 1 : 0}</span> to{' '}
-                    <span className="text-white font-semibold">
+                    Showing <span className="text-slate-900 font-bold">{leads.length > 0 ? (currentPage - 1) * 20 + 1 : 0}</span> to{' '}
+                    <span className="text-slate-900 font-bold">
                       {Math.min(currentPage * 20, totalLeadsCount || leads.length)}
                     </span>{' '}
-                    of <span className="text-white font-semibold">{totalLeadsCount || leads.length}</span> leads
+                    of <span className="text-slate-900 font-bold">{totalLeadsCount || leads.length}</span> leads
                   </span>
                   {loading && (
-                    <span className="flex items-center gap-1 text-emerald-400 text-[11px]">
+                    <span className="flex items-center gap-1 text-sky-600 text-[11px] font-medium">
                       <RefreshCw className="h-3 w-3 animate-spin" /> Loading...
                     </span>
                   )}
@@ -1394,13 +1410,13 @@ export default function OutreachDashboard() {
                       if (currentPage > 1) fetchDashboardData(currentPage - 1);
                     }}
                     disabled={currentPage <= 1 || loading}
-                    className="p-1.5 rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition flex items-center gap-1"
+                    className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1 font-bold"
                   >
                     <ChevronLeft className="h-4 w-4" />
                     <span className="hidden sm:inline pr-1">Prev</span>
                   </button>
 
-                  <div className="flex items-center gap-1 px-1 font-mono text-xs">
+                  <div className="flex items-center gap-1 px-1 font-mono text-xs font-bold text-slate-800">
                     Page {currentPage} of {totalPages}
                   </div>
 
@@ -1410,7 +1426,7 @@ export default function OutreachDashboard() {
                       if (currentPage < totalPages) fetchDashboardData(currentPage + 1);
                     }}
                     disabled={currentPage >= totalPages || loading}
-                    className="p-1.5 rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition flex items-center gap-1"
+                    className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1 font-bold"
                   >
                     <span className="hidden sm:inline pl-1">Next</span>
                     <ChevronRight className="h-4 w-4" />
@@ -1423,13 +1439,13 @@ export default function OutreachDashboard() {
 
         {/* Tab: Team & User Management (Admin Only) */}
         {activeTab === 'team' && currentUser?.role === 'ADMIN' && (
-          <div className="p-6 max-w-5xl mx-auto space-y-6">
+          <div className="p-6 max-w-5xl mx-auto w-full space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <Users className="h-5 w-5 text-emerald-400" /> Sales Team & User Management
+                <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                  <Users className="h-5 w-5 text-sky-600" /> Sales Team & User Management
                 </h3>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-500">
                   Create new sales reps or admin users, view lead counts per member, and control team access.
                 </p>
               </div>
@@ -1438,15 +1454,15 @@ export default function OutreachDashboard() {
                   setUserActionError('');
                   setIsNewUserModalOpen(true);
                 }}
-                className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-sky-600 to-sky-500 hover:from-sky-500 hover:to-sky-600 text-white font-bold text-xs flex items-center gap-2 shadow-sm shadow-sky-500/20 transition cursor-pointer"
               >
                 <UserPlus className="h-4 w-4" /> Add New User
               </button>
             </div>
 
-            <div className="border border-slate-800 rounded-2xl overflow-hidden bg-slate-900/80 shadow-xl">
-              <table className="w-full text-left text-xs text-slate-300">
-                <thead className="bg-slate-950/80 text-slate-400 border-b border-slate-800 uppercase tracking-wider font-semibold">
+            <div className="border border-slate-200/90 rounded-3xl overflow-hidden bg-white shadow-xs">
+              <table className="w-full text-left text-xs text-slate-700">
+                <thead className="bg-slate-50/80 text-slate-500 border-b border-slate-200 uppercase tracking-wider font-bold">
                   <tr>
                     <th className="px-5 py-3.5">Name</th>
                     <th className="px-5 py-3.5">Email Address</th>
@@ -1456,47 +1472,47 @@ export default function OutreachDashboard() {
                     <th className="px-5 py-3.5 text-right">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60">
+                <tbody className="divide-y divide-slate-100">
                   {teamMembers.map((member) => (
-                    <tr key={member.id} className="hover:bg-slate-800/40 transition">
-                      <td className="px-5 py-4 font-semibold text-white flex items-center gap-2">
-                        <div className="h-8 w-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-emerald-400">
+                    <tr key={member.id} className="hover:bg-slate-50/70 transition">
+                      <td className="px-5 py-4 font-bold text-slate-900 flex items-center gap-2">
+                        <div className="h-8 w-8 rounded-full bg-sky-100 border border-sky-200 flex items-center justify-center text-xs font-black text-sky-700">
                           {member.name.charAt(0).toUpperCase()}
                         </div>
                         {member.name}
                         {member.id === currentUser?.id && (
-                          <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full border border-slate-700">You</span>
+                          <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full border border-slate-200 font-bold">You</span>
                         )}
                       </td>
-                      <td className="px-5 py-4 font-mono text-slate-300">{member.email}</td>
+                      <td className="px-5 py-4 font-mono text-slate-600">{member.email}</td>
                       <td className="px-5 py-4">
-                        <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
+                        <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
                           member.role === 'ADMIN'
-                            ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
-                            : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                            ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                            : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                         }`}>
                           {member.role}
                         </span>
                       </td>
-                      <td className="px-5 py-4 font-bold text-white">
-                        <span className="bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800">
+                      <td className="px-5 py-4 font-bold text-slate-900">
+                        <span className="bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
                           {member.totalScraped} leads
                         </span>
                       </td>
-                      <td className="px-5 py-4 text-slate-400">
+                      <td className="px-5 py-4 text-slate-500">
                         {new Date(member.createdAt).toLocaleDateString()}
                       </td>
                       <td className="px-5 py-4 text-right">
                         {member.id !== currentUser?.id ? (
                           <button
                             onClick={() => handleDeleteUser(member.id, member.name)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-950/20 transition"
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
                             title="Delete User"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
                         ) : (
-                          <span className="text-slate-600 text-xs italic">Current user</span>
+                          <span className="text-slate-400 text-xs italic">Current user</span>
                         )}
                       </td>
                     </tr>
@@ -1509,15 +1525,15 @@ export default function OutreachDashboard() {
 
         {/* Tab 3: WhatsApp Sandbox (Admin Only) */}
         {activeTab === 'sandbox' && currentUser?.role === 'ADMIN' && (
-          <div className="p-6 max-w-2xl mx-auto space-y-6">
-            <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4 shadow-xl">
+          <div className="p-6 max-w-2xl mx-auto w-full space-y-6">
+            <div className="p-6 rounded-3xl bg-white border border-slate-200/90 space-y-4 shadow-xs">
               <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                <div className="h-10 w-10 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center border border-sky-100">
                   <Smartphone className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-white">Live WhatsApp Message Tester</h3>
-                  <p className="text-xs text-slate-400">
+                  <h3 className="text-sm font-bold text-slate-900">Live WhatsApp Message Tester</h3>
+                  <p className="text-xs text-slate-500">
                     Send a test template directly to your own verified WhatsApp phone number via CRM API Gateway.
                   </p>
                 </div>
@@ -1525,7 +1541,7 @@ export default function OutreachDashboard() {
 
               <div className="space-y-3 pt-2">
                 <div>
-                  <label className="text-xs font-medium text-slate-300 block mb-1">
+                  <label className="text-xs font-bold text-slate-700 block mb-1">
                     Recipient Phone Number (with country code)
                   </label>
                   <input
@@ -1533,16 +1549,16 @@ export default function OutreachDashboard() {
                     placeholder="e.g. 9136870930 or 919136870930"
                     value={testPhone}
                     onChange={(e) => setTestPhone(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-emerald-500 font-mono"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:bg-white focus:ring-2 focus:ring-sky-100 font-mono"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-medium text-slate-300 block mb-1">Template to Send</label>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Template to Send</label>
                   <select
                     value={testTemplate}
                     onChange={(e) => setTestTemplate(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 font-mono"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-sky-500 focus:bg-white focus:ring-2 focus:ring-sky-100 font-mono font-medium"
                   >
                     <option value="universal_b2b_web_v2">universal_b2b_web_v2 (Web & App Development)</option>
                     <option value="universal_b2b_crm_intro">universal_b2b_crm_intro (WhatsApp CRM & ERP)</option>
@@ -1552,10 +1568,10 @@ export default function OutreachDashboard() {
 
                 {testResult && (
                   <div
-                    className={`p-3 rounded-lg text-xs ${
+                    className={`p-3 rounded-xl text-xs font-medium ${
                       testResult.success
-                        ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-300'
-                        : 'bg-rose-500/10 border border-rose-500/30 text-rose-300'
+                        ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
+                        : 'bg-rose-50 border border-rose-200 text-rose-800'
                     }`}
                   >
                     {testResult.message}
@@ -1565,7 +1581,7 @@ export default function OutreachDashboard() {
                 <button
                   onClick={handleSendTestMessage}
                   disabled={testSending || !testPhone}
-                  className="w-full py-2.5 px-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold rounded-lg text-sm transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                  className="w-full py-2.5 px-4 bg-gradient-to-r from-sky-600 to-sky-500 hover:from-sky-500 hover:to-sky-600 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer shadow-sm shadow-sky-500/20"
                 >
                   {testSending ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                   Dispatch Test WhatsApp Template via CRM
@@ -1577,64 +1593,66 @@ export default function OutreachDashboard() {
 
         {/* Tab 4: Settings (Admin Only) */}
         {activeTab === 'settings' && currentUser?.role === 'ADMIN' && (
-          <div className="p-6 max-w-3xl mx-auto space-y-6">
-            <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-5 shadow-xl">
-              <div className="flex items-center gap-3 pb-3 border-b border-slate-800">
-                <KeyRound className="h-5 w-5 text-emerald-400" />
+          <div className="p-6 max-w-3xl mx-auto w-full space-y-6">
+            <div className="p-6 rounded-3xl bg-white border border-slate-200/90 space-y-5 shadow-xs">
+              <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
+                <div className="h-10 w-10 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center border border-sky-100">
+                  <KeyRound className="h-5 w-5" />
+                </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-white">JISNU CRM Gateway & Global Automation Settings</h3>
-                  <p className="text-xs text-slate-400">All outbound outreach templates are routed and logged into your CRM chat history.</p>
+                  <h3 className="text-sm font-bold text-slate-900">JISNU CRM Gateway & Automation Configuration</h3>
+                  <p className="text-xs text-slate-500">Outreach templates will be synced and logged into your CRM chat history.</p>
                 </div>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1">
+                  <label className="text-xs font-bold text-slate-700 block mb-1">
                     JISNU CRM API Gateway URL
                   </label>
                   <input
                     type="text"
                     value={settings.crmApiUrl}
                     onChange={(e) => setSettings({ ...settings, crmApiUrl: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 font-mono"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 font-mono focus:outline-none focus:border-sky-500 focus:bg-white focus:ring-2 focus:ring-sky-100"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1">
+                  <label className="text-xs font-bold text-slate-700 block mb-1">
                     JISNU CRM API Secret Key
                   </label>
                   <input
                     type="password"
                     value={settings.crmApiKey}
                     onChange={(e) => setSettings({ ...settings, crmApiKey: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 font-mono"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 font-mono focus:outline-none focus:border-sky-500 focus:bg-white focus:ring-2 focus:ring-sky-100"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 pt-2">
-                  <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-                    <label className="text-xs font-bold text-slate-200 block">Default Scrape Lead Limit</label>
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-2">
+                    <label className="text-xs font-bold text-slate-700 block">Default Scrape Lead Limit</label>
                     <input
                       type="number"
                       value={settings.globalScrapeLimit}
                       onChange={(e) => setSettings({ ...settings, globalScrapeLimit: parseInt(e.target.value, 10) || 20 })}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 font-mono"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 font-mono focus:outline-none focus:border-sky-500"
                     />
                     <p className="text-[10px] text-slate-500">Number of businesses Google Places scrapes per run.</p>
                   </div>
 
-                  <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-                    <label className="text-xs font-bold text-slate-200 block">Global Auto-Dispatch Switch</label>
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-2">
+                    <label className="text-xs font-bold text-slate-700 block">Global Auto-Dispatch Switch</label>
                     <div className="flex items-center gap-3 pt-1">
                       <input
                         type="checkbox"
                         id="globalAutoDispatchSettings"
                         checked={settings.globalAutoDispatch}
                         onChange={(e) => setSettings({ ...settings, globalAutoDispatch: e.target.checked })}
-                        className="h-4 w-4 rounded border-slate-700 bg-slate-900 text-emerald-500 focus:ring-emerald-400 cursor-pointer"
+                        className="h-4 w-4 rounded border-slate-300 bg-white text-sky-600 focus:ring-sky-500 cursor-pointer"
                       />
-                      <label htmlFor="globalAutoDispatchSettings" className="text-xs text-slate-300 cursor-pointer">
+                      <label htmlFor="globalAutoDispatchSettings" className="text-xs text-slate-700 font-medium cursor-pointer">
                         {settings.globalAutoDispatch ? '🟢 Automatically send templates' : '⚪ Gather data only'}
                       </label>
                     </div>
@@ -1645,7 +1663,7 @@ export default function OutreachDashboard() {
                   <button
                     onClick={handleSaveSettings}
                     disabled={savingSettings}
-                    className="w-full py-2.5 px-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold rounded-lg text-sm transition flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full py-2.5 px-4 bg-gradient-to-r from-sky-600 to-sky-500 hover:from-sky-500 hover:to-sky-600 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-2 cursor-pointer shadow-sm shadow-sky-500/20"
                   >
                     {savingSettings ? <RefreshCw className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
                     Save Configuration
@@ -1658,75 +1676,75 @@ export default function OutreachDashboard() {
 
         {/* Modal: Add New User (Admin Only) */}
         {isNewUserModalOpen && (
-          <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 space-y-5 shadow-2xl">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div className="flex items-center gap-2.5">
-                  <div className="h-9 w-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                  <div className="h-9 w-9 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600">
                     <UserPlus className="h-5 w-5" />
                   </div>
                   <div>
-                    <h3 className="text-base font-bold text-white">Add New User</h3>
-                    <p className="text-xs text-slate-400">Create a sales rep or administrative account</p>
+                    <h3 className="text-base font-bold text-slate-900">Add New User</h3>
+                    <p className="text-xs text-slate-500">Create a sales rep or administrative account</p>
                   </div>
                 </div>
                 <button
                   onClick={() => setIsNewUserModalOpen(false)}
-                  className="text-slate-400 hover:text-white text-lg font-bold px-2"
+                  className="text-slate-400 hover:text-slate-700 text-lg font-bold px-2"
                 >
                   ✕
                 </button>
               </div>
 
               {userActionError && (
-                <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs">
+                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
                   {userActionError}
                 </div>
               )}
 
               <form onSubmit={handleCreateUser} className="space-y-4">
                 <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1">Full Name</label>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Full Name</label>
                   <input
                     type="text"
                     required
                     placeholder="e.g. John Doe"
                     value={newUserName}
                     onChange={(e) => setNewUserName(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-sky-500 focus:bg-white focus:ring-2 focus:ring-sky-100"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1">Email Address</label>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Email Address</label>
                   <input
                     type="email"
                     required
                     placeholder="e.g. sales.rep@company.com"
                     value={newUserEmail}
                     onChange={(e) => setNewUserEmail(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-sky-500 focus:bg-white focus:ring-2 focus:ring-sky-100"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1">Password</label>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Password</label>
                   <input
                     type="password"
                     required
                     placeholder="Enter account password"
                     value={newUserPassword}
                     onChange={(e) => setNewUserPassword(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-sky-500 focus:bg-white focus:ring-2 focus:ring-sky-100"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1">Role</label>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Role</label>
                   <select
                     value={newUserRole}
                     onChange={(e) => setNewUserRole(e.target.value as any)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-sky-500 focus:bg-white focus:ring-2 focus:ring-sky-100 font-medium"
                   >
                     <option value="SALES">SALES REP (Isolated leads view)</option>
                     <option value="ADMIN">ADMIN (Full access to all leads & settings)</option>
@@ -1737,14 +1755,14 @@ export default function OutreachDashboard() {
                   <button
                     type="button"
                     onClick={() => setIsNewUserModalOpen(false)}
-                    className="flex-1 py-2 rounded-lg bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700 transition"
+                    className="flex-1 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-slate-200 transition"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={creatingUser}
-                    className="flex-1 py-2 rounded-lg bg-emerald-500 text-slate-950 text-xs font-bold hover:bg-emerald-400 transition flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20"
+                    className="flex-1 py-2 rounded-xl bg-gradient-to-r from-sky-600 to-sky-500 hover:from-sky-500 hover:to-sky-600 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm shadow-sky-500/20"
                   >
                     {creatingUser ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <UserCheck className="h-3.5 w-3.5" />}
                     Create Account
@@ -1757,24 +1775,24 @@ export default function OutreachDashboard() {
 
         {/* Lead Detail & Pitch Modal */}
         {selectedLead && (
-          <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 space-y-5 shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white border border-slate-200 rounded-3xl max-w-xl w-full p-6 space-y-5 shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
                     {selectedLead.businessName}
-                    <span className="text-xs px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-sky-50 text-sky-700 border border-sky-200 font-semibold">
                       {selectedLead.category}
                     </span>
                   </h3>
-                  <p className="text-xs text-slate-400 flex items-center gap-2 mt-1 flex-wrap">
+                  <p className="text-xs text-slate-500 flex items-center gap-2 mt-1 flex-wrap">
                     <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {selectedLead.city || 'India'}</span>
                     <span>•</span>
-                    <span className="font-mono text-emerald-400">Phone: {selectedLead.formattedPhone || selectedLead.phoneNumber}</span>
+                    <span className="font-mono font-semibold text-sky-700">Phone: {selectedLead.formattedPhone || selectedLead.phoneNumber}</span>
                     {selectedLead.email && (
                       <>
                         <span>•</span>
-                        <span className="font-mono text-sky-400 flex items-center gap-1">
+                        <span className="font-mono text-slate-700 flex items-center gap-1">
                           <Mail className="h-3 w-3" /> {selectedLead.email}
                         </span>
                       </>
@@ -1783,20 +1801,20 @@ export default function OutreachDashboard() {
                 </div>
                 <button
                   onClick={() => setSelectedLead(null)}
-                  className="text-slate-400 hover:text-white text-lg font-bold px-2"
+                  className="text-slate-400 hover:text-slate-700 text-lg font-bold px-2"
                 >
                   ✕
                 </button>
               </div>
 
               {/* Status & Remarks Section inside Modal */}
-              <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2.5">
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-300">Sales Workflow Status</span>
+                  <span className="text-xs font-bold text-slate-800">Sales Workflow Status</span>
                   <select
                     value={selectedLead.leadStatus || 'PENDING'}
                     onChange={(e) => handleUpdateLeadStatus(selectedLead.id, e.target.value)}
-                    className="bg-slate-900 text-xs font-semibold px-2.5 py-1 rounded border border-slate-700 text-slate-200"
+                    className="bg-white text-xs font-bold px-3 py-1.5 rounded-xl border border-slate-300 text-slate-800 shadow-2xs"
                   >
                     <option value="PENDING">🟡 PENDING</option>
                     <option value="CONTACTED">🔵 CONTACTED</option>
@@ -1805,14 +1823,14 @@ export default function OutreachDashboard() {
                   </select>
                 </div>
                 <div>
-                  <span className="text-[11px] text-slate-400 block mb-1">Follow-up Notes / Remarks</span>
+                  <span className="text-[11px] text-slate-500 font-bold block mb-1">Follow-up Notes / Remarks</span>
                   <div className="flex items-center gap-2">
                     <input
                       type="text"
                       defaultValue={selectedLead.remarks || ''}
                       placeholder="Add follow-up notes..."
                       id="modalRemarkInput"
-                      className="w-full bg-slate-900 border border-slate-800 rounded px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
                     />
                     <button
                       onClick={() => {
@@ -1822,7 +1840,7 @@ export default function OutreachDashboard() {
                           handleSaveLeadRemark(selectedLead.id);
                         }
                       }}
-                      className="px-3 py-1.5 bg-emerald-500 text-slate-950 text-xs font-bold rounded hover:bg-emerald-400"
+                      className="px-3.5 py-1.5 bg-gradient-to-r from-sky-600 to-sky-500 hover:from-sky-500 hover:to-sky-600 text-white text-xs font-bold rounded-xl shadow-xs"
                     >
                       Save
                     </button>
@@ -1831,49 +1849,49 @@ export default function OutreachDashboard() {
               </div>
 
               {/* Assigned Meta Template Card */}
-              <div className="p-3.5 rounded-xl bg-indigo-950/20 border border-indigo-500/30 space-y-2 text-xs">
-                <div className="font-semibold text-indigo-400 flex items-center justify-between">
+              <div className="p-3.5 rounded-2xl bg-sky-50/80 border border-sky-200 space-y-2 text-xs">
+                <div className="font-bold text-sky-800 flex items-center justify-between">
                   <span className="flex items-center gap-1.5">
                     <FileCheck className="h-3.5 w-3.5" /> Assigned Meta Template To Send:
                   </span>
-                  <span className="font-mono bg-indigo-900/60 px-2 py-0.5 rounded text-[11px] text-indigo-200">
+                  <span className="font-mono bg-white px-2 py-0.5 rounded-full text-[11px] text-sky-800 border border-sky-200 font-bold">
                     {selectedLead.assignedTemplate || 'universal_b2b_web_v2'}
                   </span>
                 </div>
-                <div className="text-slate-300 text-[11px]">
+                <div className="text-slate-600 text-[11px]">
                   <strong>Pitch Strategy:</strong> {selectedLead.pitchAngle || selectedLead.pitchCategory}
                 </div>
               </div>
 
               {/* Digital Audit Card */}
-              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5 text-xs">
-                <div className="font-semibold text-slate-300 flex items-center gap-1.5">
-                  <Globe className="h-3.5 w-3.5 text-teal-400" /> Digital Footprint Audit:
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5 text-xs">
+                <div className="font-bold text-slate-800 flex items-center gap-1.5">
+                  <Globe className="h-3.5 w-3.5 text-sky-600" /> Digital Footprint Audit:
                 </div>
-                <p className="text-slate-400 leading-relaxed text-[11px]">{selectedLead.auditSummary}</p>
+                <p className="text-slate-600 leading-relaxed text-[11px]">{selectedLead.auditSummary}</p>
               </div>
 
               {/* Generated Custom Pitch Script */}
-              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5 text-xs">
-                <div className="font-semibold text-emerald-400 flex items-center gap-1.5">
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5 text-xs">
+                <div className="font-bold text-sky-700 flex items-center gap-1.5">
                   <MessageSquare className="h-3.5 w-3.5" /> Tailored Pitch Script (For Sales Follow-up):
                 </div>
-                <div className="text-slate-300 whitespace-pre-line bg-slate-900/90 p-2.5 rounded-lg border border-slate-800 font-sans text-xs leading-relaxed max-h-36 overflow-y-auto">
+                <div className="text-slate-700 whitespace-pre-line bg-white p-3 rounded-xl border border-slate-200 font-sans text-xs leading-relaxed max-h-36 overflow-y-auto">
                   {selectedLead.personalizedPitch || 'No pitch copy generated.'}
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-2">
+              <div className="flex justify-end gap-2.5 pt-2">
                 <button
                   onClick={() => setSelectedLead(null)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition"
                 >
                   Close
                 </button>
                 <button
                   onClick={() => handleSendSingleTemplate(selectedLead)}
                   disabled={sendingSingleLead}
-                  className="px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition cursor-pointer"
+                  className="px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 bg-gradient-to-r from-sky-600 to-sky-500 hover:from-sky-500 hover:to-sky-600 text-white transition cursor-pointer shadow-sm shadow-sky-500/20"
                 >
                   {sendingSingleLead ? (
                     <>
@@ -1896,23 +1914,23 @@ export default function OutreachDashboard() {
 
         {/* Modal: Export Leads */}
         {isExportModalOpen && (
-          <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 space-y-5 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white border border-slate-200 rounded-3xl max-w-2xl w-full p-6 space-y-5 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div className="flex items-center gap-2.5">
-                  <div className="h-9 w-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                  <div className="h-9 w-9 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600">
                     <Download className="h-5 w-5" />
                   </div>
                   <div>
-                    <h3 className="text-base font-bold text-white">Export Qualified Leads</h3>
-                    <p className="text-xs text-slate-400">
+                    <h3 className="text-base font-bold text-slate-900">Export Qualified Leads</h3>
+                    <p className="text-xs text-slate-500">
                       Select custom fields, configure time ranges, and download your export file.
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => setIsExportModalOpen(false)}
-                  className="text-slate-400 hover:text-white text-lg font-bold px-2"
+                  className="text-slate-400 hover:text-slate-700 text-lg font-bold px-2"
                 >
                   ✕
                 </button>
@@ -1920,9 +1938,9 @@ export default function OutreachDashboard() {
 
               <div className="space-y-4 overflow-y-auto pr-1 flex-1">
                 {/* Time Range Selector */}
-                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
-                  <label className="text-xs font-bold text-slate-200 flex items-center gap-2">
-                    <Calendar className="h-3.5 w-3.5 text-indigo-400" />
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                  <label className="text-xs font-bold text-slate-700 flex items-center gap-2">
+                    <Calendar className="h-3.5 w-3.5 text-sky-600" />
                     Time Range Filter
                   </label>
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
@@ -1937,10 +1955,10 @@ export default function OutreachDashboard() {
                         key={t.id}
                         type="button"
                         onClick={() => setExportDateRange(t.id as any)}
-                        className={`py-1.5 px-3 rounded-lg text-xs font-semibold border transition text-center ${
+                        className={`py-1.5 px-3 rounded-xl text-xs font-bold border transition text-center ${
                           exportDateRange === t.id
-                            ? 'bg-indigo-600 border-indigo-500 text-white shadow-sm shadow-indigo-500/30'
-                            : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800'
+                            ? 'bg-sky-600 border-sky-600 text-white shadow-xs'
+                            : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
                         }`}
                       >
                         {t.label}
@@ -1951,21 +1969,21 @@ export default function OutreachDashboard() {
                   {exportDateRange === 'custom' && (
                     <div className="grid grid-cols-2 gap-3 pt-2">
                       <div>
-                        <label className="text-[11px] text-slate-400 block mb-1">Start Date</label>
+                        <label className="text-[11px] text-slate-600 font-bold block mb-1">Start Date</label>
                         <input
                           type="date"
                           value={exportStartDate}
                           onChange={(e) => setExportStartDate(e.target.value)}
-                          className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 font-mono"
+                          className="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-900 font-mono"
                         />
                       </div>
                       <div>
-                        <label className="text-[11px] text-slate-400 block mb-1">End Date</label>
+                        <label className="text-[11px] text-slate-600 font-bold block mb-1">End Date</label>
                         <input
                           type="date"
                           value={exportEndDate}
                           onChange={(e) => setExportEndDate(e.target.value)}
-                          className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 font-mono"
+                          className="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-900 font-mono"
                         />
                       </div>
                     </div>
@@ -1974,9 +1992,9 @@ export default function OutreachDashboard() {
 
                 {/* Dispatch Status Filter & Export Format */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-                    <label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                      <Filter className="h-3.5 w-3.5 text-emerald-400" />
+                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                    <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                      <Filter className="h-3.5 w-3.5 text-sky-600" />
                       Status Filter
                     </label>
                     <div className="flex gap-2">
@@ -1989,10 +2007,10 @@ export default function OutreachDashboard() {
                           key={s.id}
                           type="button"
                           onClick={() => setExportTemplateFilter(s.id as any)}
-                          className={`flex-1 py-1 px-2 rounded-lg text-[11px] font-medium border transition ${
+                          className={`flex-1 py-1 px-2 rounded-xl text-[11px] font-bold border transition ${
                             exportTemplateFilter === s.id
-                              ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
-                              : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                              ? 'bg-sky-600 border-sky-600 text-white'
+                              : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
                           }`}
                         >
                           {s.label}
@@ -2001,9 +2019,9 @@ export default function OutreachDashboard() {
                     </div>
                   </div>
 
-                  <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-                    <label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                      <Download className="h-3.5 w-3.5 text-sky-400" />
+                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                    <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                      <Download className="h-3.5 w-3.5 text-sky-600" />
                       File Format
                     </label>
                     <div className="flex gap-2">
@@ -2015,10 +2033,10 @@ export default function OutreachDashboard() {
                           key={fmt.id}
                           type="button"
                           onClick={() => setExportFormat(fmt.id as any)}
-                          className={`flex-1 py-1 px-2 rounded-lg text-[11px] font-medium border transition ${
+                          className={`flex-1 py-1 px-2 rounded-xl text-[11px] font-bold border transition ${
                             exportFormat === fmt.id
-                              ? 'bg-sky-500/20 border-sky-500/40 text-sky-300'
-                              : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                              ? 'bg-sky-600 border-sky-600 text-white'
+                              : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
                           }`}
                         >
                           {fmt.label}
@@ -2029,25 +2047,25 @@ export default function OutreachDashboard() {
                 </div>
 
                 {/* Column Selection */}
-                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                      <CheckSquare className="h-3.5 w-3.5 text-amber-400" />
+                    <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                      <CheckSquare className="h-3.5 w-3.5 text-amber-500" />
                       Select Columns ({selectedFields.length}/{availableExportFields.length})
                     </label>
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
                         onClick={selectAllFields}
-                        className="text-[11px] text-emerald-400 hover:text-emerald-300 underline"
+                        className="text-[11px] text-sky-600 hover:text-sky-800 font-bold underline"
                       >
                         Select All
                       </button>
-                      <span className="text-slate-600">•</span>
+                      <span className="text-slate-300">•</span>
                       <button
                         type="button"
                         onClick={deselectAllFields}
-                        className="text-[11px] text-slate-400 hover:text-slate-300 underline"
+                        className="text-[11px] text-slate-500 hover:text-slate-700 font-bold underline"
                       >
                         Reset
                       </button>
@@ -2061,16 +2079,16 @@ export default function OutreachDashboard() {
                         <div
                           key={field.key}
                           onClick={() => toggleExportField(field.key)}
-                          className={`p-2 rounded-lg border text-xs cursor-pointer flex items-center gap-2.5 select-none transition ${
+                          className={`p-2 rounded-xl border text-xs cursor-pointer flex items-center gap-2.5 select-none transition ${
                             isChecked
-                              ? 'bg-emerald-950/30 border-emerald-500/30 text-emerald-200'
-                              : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:bg-slate-800/60'
+                              ? 'bg-sky-50 border-sky-300 text-sky-900 font-semibold'
+                              : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
                           }`}
                         >
                           {isChecked ? (
-                            <CheckSquare className="h-4 w-4 text-emerald-400 shrink-0" />
+                            <CheckSquare className="h-4 w-4 text-sky-600 shrink-0" />
                           ) : (
-                            <Square className="h-4 w-4 text-slate-600 shrink-0" />
+                            <Square className="h-4 w-4 text-slate-400 shrink-0" />
                           )}
                           <span className="truncate">{field.label}</span>
                         </div>
@@ -2081,12 +2099,12 @@ export default function OutreachDashboard() {
               </div>
 
               {/* Modal Footer */}
-              <div className="flex items-center justify-between pt-3 border-t border-slate-800">
+              <div className="flex items-center justify-between pt-3 border-t border-slate-100">
                 <div className="flex items-center gap-2">
-                  <span className={`text-xs font-mono px-2 py-0.5 rounded-full border ${
+                  <span className={`text-xs font-mono font-bold px-2.5 py-0.5 rounded-full border ${
                     matchingLeadsCount > 0
-                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                      : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      : 'bg-amber-50 text-amber-700 border-amber-200'
                   }`}>
                     {matchingLeadsCount} matching lead{matchingLeadsCount === 1 ? '' : 's'}
                   </span>
@@ -2095,7 +2113,7 @@ export default function OutreachDashboard() {
                   <button
                     type="button"
                     onClick={() => setIsExportModalOpen(false)}
-                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold"
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold"
                   >
                     Cancel
                   </button>
@@ -2103,7 +2121,7 @@ export default function OutreachDashboard() {
                     type="button"
                     onClick={handleExecuteExport}
                     disabled={matchingLeadsCount === 0}
-                    className="px-5 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed text-slate-950 shadow-md shadow-emerald-500/20 transition cursor-pointer"
+                    className="px-5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 bg-gradient-to-r from-sky-600 to-sky-500 hover:from-sky-500 hover:to-sky-600 disabled:opacity-40 disabled:cursor-not-allowed text-white shadow-sm shadow-sky-500/20 transition cursor-pointer"
                   >
                     <Download className="h-3.5 w-3.5" /> Download {exportFormat.toUpperCase()} ({matchingLeadsCount})
                   </button>

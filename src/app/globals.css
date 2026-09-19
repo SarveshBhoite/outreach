@@ -1,28 +1,74 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Brand Theme Colors extracted from automationcrm */
+  --brand-blue: #0284C7;
+  --brand-blue-deep: #0369A1;
+  --brand-blue-royal: #0F52BA;
+  --brand-cyan: #38BDF8;
+  --brand-green: #059669;
+  --brand-green-light: #10B981;
+  --brand-orange: #EA580C;
+  --brand-orange-light: #F97316;
+
+  /* Crisp Professional Slate Background & Typography matching automationcrm */
+  --background: #F8FAFC;
+  --foreground: #0F172A;
+
+  --card: #FFFFFF;
+  --card-foreground: #0F172A;
+
+  --primary: #0284C7;
+  --primary-foreground: #FFFFFF;
+
+  --secondary: #0EA5E9;
+  --secondary-foreground: #FFFFFF;
+
+  --accent: #F97316;
+  --accent-foreground: #FFFFFF;
+
+  --success: #059669;
+  --success-foreground: #FFFFFF;
+
+  --muted: #F1F5F9;
+  --muted-foreground: #64748B;
+
+  --border: #E2E8F0;
+  --input: #E2E8F0;
+  --ring: #0284C7;
 }
 
-@theme inline {
+@theme {
+  --font-sans: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  --font-mono: var(--font-geist-mono), monospace;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-blue-deep: var(--brand-blue-deep);
+  --color-brand-blue-royal: var(--brand-blue-royal);
+  --color-brand-cyan: var(--brand-cyan);
+  --color-brand-green: var(--brand-green);
+  --color-brand-green-light: var(--brand-green-light);
+  --color-brand-orange: var(--brand-orange);
+  --color-brand-orange-light: var(--brand-orange-light);
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Selection styling matching brand */
+::selection {
+  background: #E0F2FE;
+  color: #0369A1;
 }
 
 /* Hide scrollbar while keeping scroll functionality */
