@@ -27,6 +27,7 @@ import {
   PanelLeftClose,
   PanelLeft,
   Menu,
+  X,
   Mail,
   Download,
   Calendar,
@@ -113,6 +114,7 @@ export default function OutreachDashboard() {
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'leads' | 'sandbox' | 'settings' | 'team'>('overview');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [runningAutopilot, setRunningAutopilot] = useState(false);
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -712,34 +714,52 @@ export default function OutreachDashboard() {
 
   return (
     <div className="flex h-screen bg-slate-50 text-slate-900 overflow-hidden font-sans">
-      {/* Sidebar: Uniform Solid Brand Theme Background (#BAE6FD) matching automationcrm */}
+      {/* Mobile Drawer Backdrop */}
+      {isMobileDrawerOpen && (
+        <div
+          onClick={() => setIsMobileDrawerOpen(false)}
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-40 sm:hidden transition-opacity"
+          aria-label="Close Mobile Drawer"
+        />
+      )}
+
+      {/* Sidebar: Responsive Drawer on Mobile, Collapsible on Desktop (#BAE6FD Brand Theme) */}
       <aside
-        className={`${
-          isSidebarOpen ? 'w-64' : 'w-16'
-        } transition-all duration-300 ease-in-out border-r border-sky-300 bg-[#BAE6FD] flex flex-col justify-between p-3 shrink-0 z-20 shadow-xs`}
+        className={`
+          fixed sm:static inset-y-0 left-0 z-50
+          ${isMobileDrawerOpen ? 'translate-x-0' : '-translate-x-full sm:translate-x-0'}
+          ${isSidebarOpen ? 'sm:w-64 w-72' : 'sm:w-16 w-72'}
+          transition-all duration-300 ease-in-out border-r border-sky-300 bg-[#BAE6FD] flex flex-col justify-between p-3 shrink-0 shadow-lg sm:shadow-xs
+        `}
       >
         <div>
           {/* Logo & Toggle Header */}
           <div className="flex items-center justify-between px-1 py-2 mb-3">
             <div className="flex items-center gap-3 overflow-hidden">
-              <div className="h-10 w-10 rounded-2xl bg-white border border-sky-300 flex items-center justify-center shadow-xs shrink-0 p-0.5">
-                <div className="h-full w-full rounded-xl bg-gradient-to-tr from-sky-600 to-sky-400 flex items-center justify-center text-white">
-                  <Zap className="h-5 w-5" />
-                </div>
+              <div className="h-10 w-10 rounded-2xl bg-white border border-sky-300 overflow-hidden flex items-center justify-center shadow-xs shrink-0 p-0.5">
+                <img src="/icon.jpeg" alt="Logo" className="h-full w-full object-cover rounded-xl" />
               </div>
-              {isSidebarOpen && (
-                <div className="truncate">
-                  <h1 className="text-base font-black tracking-tight text-slate-900 flex items-center gap-1.5 truncate">
-                    OutreachAI <span className="text-[10px] bg-sky-600 text-white font-bold px-1.5 py-0.5 rounded">CRM</span>
-                  </h1>
-                  <p className="text-[11px] text-slate-600 font-semibold truncate">Jisnu Outreach Hub</p>
-                </div>
-              )}
+              <div className={`${isSidebarOpen ? 'block' : 'hidden sm:hidden block'} truncate`}>
+                <h1 className="text-base font-black tracking-tight text-slate-900 flex items-center gap-1.5 truncate">
+                  OutreachAI <span className="text-[10px] bg-sky-600 text-white font-bold px-1.5 py-0.5 rounded">CRM</span>
+                </h1>
+                <p className="text-[11px] text-slate-600 font-semibold truncate">Jisnu Outreach Hub</p>
+              </div>
             </div>
 
+            {/* Mobile Close (X) button */}
+            <button
+              onClick={() => setIsMobileDrawerOpen(false)}
+              className="sm:hidden p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-white/60 transition"
+              title="Close Drawer"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            {/* Desktop Sidebar Collapse Toggle */}
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-white/60 transition shrink-0"
+              className="hidden sm:flex p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-white/60 transition shrink-0"
               title={isSidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
             >
               {isSidebarOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeft className="h-4 w-4" />}
@@ -750,10 +770,13 @@ export default function OutreachDashboard() {
           <nav className="space-y-1.5">
             {/* 1. Command Center */}
             <button
-              onClick={() => setActiveTab('overview')}
+              onClick={() => {
+                setActiveTab('overview');
+                setIsMobileDrawerOpen(false);
+              }}
               title={!isSidebarOpen ? 'Command Center' : undefined}
               className={`w-full flex items-center ${
-                isSidebarOpen ? 'gap-3 px-3' : 'justify-center px-0'
+                isSidebarOpen ? 'gap-3 px-3' : 'sm:justify-center sm:px-0 gap-3 px-3'
               } py-2.5 rounded-xl text-xs font-bold transition-all ${
                 activeTab === 'overview'
                   ? 'bg-gradient-to-r from-sky-600 to-sky-500 text-white shadow-md shadow-sky-600/25 scale-[1.02]'
@@ -761,15 +784,18 @@ export default function OutreachDashboard() {
               }`}
             >
               <Activity className="h-4 w-4 shrink-0" />
-              {isSidebarOpen && <span className="truncate">Command Center</span>}
+              <span className={`${isSidebarOpen ? 'inline' : 'sm:hidden inline'} truncate`}>Command Center</span>
             </button>
 
             {/* 2. Leads CRM */}
             <button
-              onClick={() => setActiveTab('leads')}
+              onClick={() => {
+                setActiveTab('leads');
+                setIsMobileDrawerOpen(false);
+              }}
               title={!isSidebarOpen ? 'Lead CRM & Audits' : undefined}
               className={`w-full flex items-center ${
-                isSidebarOpen ? 'gap-3 px-3' : 'justify-center px-0'
+                isSidebarOpen ? 'gap-3 px-3' : 'sm:justify-center sm:px-0 gap-3 px-3'
               } py-2.5 rounded-xl text-xs font-bold transition-all ${
                 activeTab === 'leads'
                   ? 'bg-gradient-to-r from-sky-600 to-sky-500 text-white shadow-md shadow-sky-600/25 scale-[1.02]'
@@ -777,35 +803,34 @@ export default function OutreachDashboard() {
               }`}
             >
               <Building2 className="h-4 w-4 shrink-0" />
-              {isSidebarOpen && (
-                <>
-                  <span className="truncate">Lead CRM & Audits</span>
-                  {leads.length > 0 && (
-                    <span className="ml-auto text-[10px] bg-white text-sky-800 font-bold px-2 py-0.5 rounded-full border border-sky-200">
-                      {leads.length}
-                    </span>
-                  )}
-                </>
-              )}
+              <div className={`${isSidebarOpen ? 'flex' : 'sm:hidden flex'} items-center justify-between flex-1 truncate`}>
+                <span className="truncate">Lead CRM & Audits</span>
+                {leads.length > 0 && (
+                  <span className="ml-auto text-[10px] bg-white text-sky-800 font-bold px-2 py-0.5 rounded-full border border-sky-200">
+                    {leads.length}
+                  </span>
+                )}
+              </div>
             </button>
 
             {/* ADMIN ONLY TABS */}
             {currentUser?.role === 'ADMIN' && (
               <>
                 <div className="pt-2 pb-1">
-                  {isSidebarOpen && (
-                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 px-3">
-                      Admin Portal
-                    </span>
-                  )}
+                  <span className={`text-[10px] font-black uppercase tracking-wider text-slate-500 px-3 ${isSidebarOpen ? 'block' : 'sm:hidden block'}`}>
+                    Admin Portal
+                  </span>
                 </div>
 
                 {/* 3. Team Management */}
                 <button
-                  onClick={() => setActiveTab('team')}
+                  onClick={() => {
+                    setActiveTab('team');
+                    setIsMobileDrawerOpen(false);
+                  }}
                   title={!isSidebarOpen ? 'Team & Users' : undefined}
                   className={`w-full flex items-center ${
-                    isSidebarOpen ? 'gap-3 px-3' : 'justify-center px-0'
+                    isSidebarOpen ? 'gap-3 px-3' : 'sm:justify-center sm:px-0 gap-3 px-3'
                   } py-2.5 rounded-xl text-xs font-bold transition-all ${
                     activeTab === 'team'
                       ? 'bg-gradient-to-r from-sky-600 to-sky-500 text-white shadow-md shadow-sky-600/25 scale-[1.02]'
@@ -813,15 +838,18 @@ export default function OutreachDashboard() {
                   }`}
                 >
                   <Users className="h-4 w-4 shrink-0" />
-                  {isSidebarOpen && <span className="truncate">Team & Users</span>}
+                  <span className={`${isSidebarOpen ? 'inline' : 'sm:hidden inline'} truncate`}>Team & Users</span>
                 </button>
 
                 {/* 4. WhatsApp Sandbox */}
                 <button
-                  onClick={() => setActiveTab('sandbox')}
+                  onClick={() => {
+                    setActiveTab('sandbox');
+                    setIsMobileDrawerOpen(false);
+                  }}
                   title={!isSidebarOpen ? 'WhatsApp Sandbox' : undefined}
                   className={`w-full flex items-center ${
-                    isSidebarOpen ? 'gap-3 px-3' : 'justify-center px-0'
+                    isSidebarOpen ? 'gap-3 px-3' : 'sm:justify-center sm:px-0 gap-3 px-3'
                   } py-2.5 rounded-xl text-xs font-bold transition-all ${
                     activeTab === 'sandbox'
                       ? 'bg-gradient-to-r from-sky-600 to-sky-500 text-white shadow-md shadow-sky-600/25 scale-[1.02]'
@@ -829,15 +857,18 @@ export default function OutreachDashboard() {
                   }`}
                 >
                   <MessageSquare className="h-4 w-4 shrink-0" />
-                  {isSidebarOpen && <span className="truncate">WhatsApp Sandbox</span>}
+                  <span className={`${isSidebarOpen ? 'inline' : 'sm:hidden inline'} truncate`}>WhatsApp Sandbox</span>
                 </button>
 
                 {/* 5. Settings */}
                 <button
-                  onClick={() => setActiveTab('settings')}
+                  onClick={() => {
+                    setActiveTab('settings');
+                    setIsMobileDrawerOpen(false);
+                  }}
                   title={!isSidebarOpen ? 'Settings & CRM Gateway' : undefined}
                   className={`w-full flex items-center ${
-                    isSidebarOpen ? 'gap-3 px-3' : 'justify-center px-0'
+                    isSidebarOpen ? 'gap-3 px-3' : 'sm:justify-center sm:px-0 gap-3 px-3'
                   } py-2.5 rounded-xl text-xs font-bold transition-all ${
                     activeTab === 'settings'
                       ? 'bg-gradient-to-r from-sky-600 to-sky-500 text-white shadow-md shadow-sky-600/25 scale-[1.02]'
@@ -845,7 +876,7 @@ export default function OutreachDashboard() {
                   }`}
                 >
                   <Sliders className="h-4 w-4 shrink-0" />
-                  {isSidebarOpen && <span className="truncate">Settings & Gateway</span>}
+                  <span className={`${isSidebarOpen ? 'inline' : 'sm:hidden inline'} truncate`}>Settings & Gateway</span>
                 </button>
               </>
             )}
@@ -854,7 +885,7 @@ export default function OutreachDashboard() {
 
         {/* Sidebar Footer: User Card */}
         <div className="pt-3 border-t border-sky-300">
-          {isSidebarOpen ? (
+          <div className={`${isSidebarOpen ? 'block' : 'sm:hidden block'}`}>
             <div className="p-2.5 rounded-xl bg-white/90 border border-sky-200/80 text-xs flex items-center justify-between shadow-2xs">
               <div className="truncate pr-2">
                 <div className="font-bold text-slate-900 truncate flex items-center gap-1.5">
@@ -878,8 +909,9 @@ export default function OutreachDashboard() {
                 <LogOut className="h-4 w-4" />
               </button>
             </div>
-          ) : (
-            <div className="flex justify-center">
+          </div>
+          {!isSidebarOpen && (
+            <div className="hidden sm:flex justify-center">
               <button
                 onClick={handleLogout}
                 className="p-2 rounded-lg text-slate-600 hover:text-rose-600 hover:bg-white/80 transition"
@@ -895,51 +927,63 @@ export default function OutreachDashboard() {
       {/* Main Content Area: Clean slate-50 background matching automationcrm */}
       <main className="flex-1 flex flex-col overflow-y-auto bg-slate-50 min-w-0">
         {/* Top App Header */}
-        <header className="h-16 border-b border-slate-200/90 px-6 flex items-center justify-between bg-white/90 backdrop-blur-md sticky top-0 z-10 shadow-2xs">
-          <div className="flex items-center gap-3">
+        <header className="min-h-16 py-2 sm:py-0 border-b border-slate-200/90 px-3 sm:px-6 flex items-center justify-between bg-white/90 backdrop-blur-md sticky top-0 z-20 shadow-2xs gap-2 sm:gap-4 flex-wrap sm:flex-nowrap">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            {/* Mobile Hamburger Button */}
+            <button
+              onClick={() => setIsMobileDrawerOpen(true)}
+              className="sm:hidden p-2 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-sky-600 transition shrink-0 shadow-2xs"
+              title="Open Navigation Menu"
+              aria-label="Open Navigation Menu"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+
+            {/* Desktop Open Sidebar Button when collapsed */}
             {!isSidebarOpen && (
               <button
                 onClick={() => setIsSidebarOpen(true)}
-                className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition"
+                className="hidden sm:flex p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition shrink-0"
                 title="Open Sidebar"
               >
                 <PanelLeft className="h-4 w-4 text-sky-600" />
               </button>
             )}
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base font-black text-slate-900 capitalize">
-                  {activeTab === 'overview' && 'Autonomous Command Center'}
-                  {activeTab === 'leads' && (currentUser?.role === 'ADMIN' ? 'All Team Leads & Digital Audits' : 'My Scraped Leads & Outreach Pipeline')}
-                  {activeTab === 'team' && 'Team & User Management (Admin)'}
-                  {activeTab === 'sandbox' && 'WhatsApp Dispatch Sandbox'}
-                  {activeTab === 'settings' && 'System Configuration & CRM API Gateway'}
+
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                <h2 className="text-sm sm:text-base font-black text-slate-900 capitalize truncate">
+                  {activeTab === 'overview' && 'Command Center'}
+                  {activeTab === 'leads' && (currentUser?.role === 'ADMIN' ? 'Team Leads & Audits' : 'My Leads & Pipeline')}
+                  {activeTab === 'team' && 'Team & Users'}
+                  {activeTab === 'sandbox' && 'WhatsApp Sandbox'}
+                  {activeTab === 'settings' && 'CRM Configuration'}
                 </h2>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                <span className="text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1 shrink-0">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  Live Sync
+                  <span className="hidden xs:inline">Live Sync</span>
                 </span>
               </div>
-              <p className="text-xs text-slate-500 font-medium">
-                {currentUser?.role === 'ADMIN' ? '👑 Admin Mode: Full Team Oversight & Control' : `Sales Rep: ${currentUser?.name || currentUser?.email}`}
+              <p className="text-[11px] sm:text-xs text-slate-500 font-medium truncate">
+                {currentUser?.role === 'ADMIN' ? '👑 Admin: Full Team Oversight' : `Sales: ${currentUser?.name || currentUser?.email}`}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 ml-auto shrink-0">
             {/* Auto Dispatch Switch (Admin Only) */}
             {currentUser?.role === 'ADMIN' && (
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl shadow-2xs">
+              <div className="flex items-center gap-1.5 sm:gap-2 bg-slate-50 border border-slate-200 px-2 sm:px-3 py-1.5 rounded-xl shadow-2xs">
                 <input
                   type="checkbox"
                   id="globalAutoDispatchHeader"
                   checked={settings.globalAutoDispatch}
                   onChange={(e) => handleToggleGlobalAutoDispatch(e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-300 bg-white text-sky-600 focus:ring-sky-500 cursor-pointer"
+                  className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded border-slate-300 bg-white text-sky-600 focus:ring-sky-500 cursor-pointer"
                 />
-                <label htmlFor="globalAutoDispatchHeader" className="text-xs font-bold text-slate-700 cursor-pointer flex items-center gap-1.5">
+                <label htmlFor="globalAutoDispatchHeader" className="text-[11px] sm:text-xs font-bold text-slate-700 cursor-pointer flex items-center gap-1">
                   <Send className="h-3 w-3 text-sky-600" />
-                  Auto-Dispatch
+                  <span className="hidden md:inline">Auto-Dispatch</span>
                 </label>
               </div>
             )}
@@ -947,7 +991,7 @@ export default function OutreachDashboard() {
             <button
               onClick={() => fetchDashboardData(currentPage)}
               disabled={loading}
-              className="p-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 shadow-2xs transition"
+              className="p-1.5 sm:p-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 shadow-2xs transition"
               title="Refresh Data"
             >
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
@@ -956,7 +1000,7 @@ export default function OutreachDashboard() {
             <button
               onClick={() => handleTriggerAutopilot(false)}
               disabled={runningAutopilot}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer ${
+              className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer ${
                 runningAutopilot
                   ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
                   : 'bg-gradient-to-r from-sky-600 to-sky-500 hover:from-sky-500 hover:to-sky-600 text-white shadow-sky-500/20'
@@ -965,12 +1009,13 @@ export default function OutreachDashboard() {
               {runningAutopilot ? (
                 <>
                   <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                  Scraping Leads...
+                  <span className="hidden xs:inline">Scraping Leads...</span>
                 </>
               ) : (
                 <>
                   <Sparkles className="h-3.5 w-3.5 text-amber-300" />
-                  Launch Daily Autopilot
+                  <span className="hidden xs:inline">Daily Autopilot</span>
+                  <span className="xs:hidden">Autopilot</span>
                 </>
               )}
             </button>
@@ -979,7 +1024,7 @@ export default function OutreachDashboard() {
 
         {/* Tab 1: Overview / Command Center */}
         {activeTab === 'overview' && (
-          <div className="p-6 space-y-6 max-w-7xl mx-auto w-full">
+          <div className="p-4 sm:p-6 space-y-6 max-w-7xl mx-auto w-full">
             {/* Stat Cards matching automationcrm */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Card 1: Total Leads */}
@@ -1133,7 +1178,7 @@ export default function OutreachDashboard() {
 
         {/* Tab 2: Lead CRM Table, Status & Remarks */}
         {activeTab === 'leads' && (
-          <div className="p-6 space-y-4 max-w-7xl mx-auto w-full">
+          <div className="p-4 sm:p-6 space-y-4 max-w-7xl mx-auto w-full">
             {/* Header & Filter Controls */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-3xl border border-slate-200/90 shadow-xs">
               <div>
@@ -1145,7 +1190,7 @@ export default function OutreachDashboard() {
                 </p>
               </div>
 
-              <div className="flex items-center gap-2.5 flex-wrap">
+              <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
                 {/* Admin Sales Rep Selector */}
                 {currentUser?.role === 'ADMIN' && (
                   <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-xs">
@@ -1439,8 +1484,8 @@ export default function OutreachDashboard() {
 
         {/* Tab: Team & User Management (Admin Only) */}
         {activeTab === 'team' && currentUser?.role === 'ADMIN' && (
-          <div className="p-6 max-w-5xl mx-auto w-full space-y-6">
-            <div className="flex items-center justify-between">
+          <div className="p-4 sm:p-6 max-w-5xl mx-auto w-full space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
                   <Users className="h-5 w-5 text-sky-600" /> Sales Team & User Management
@@ -1454,79 +1499,81 @@ export default function OutreachDashboard() {
                   setUserActionError('');
                   setIsNewUserModalOpen(true);
                 }}
-                className="px-4 py-2 rounded-xl bg-gradient-to-r from-sky-600 to-sky-500 hover:from-sky-500 hover:to-sky-600 text-white font-bold text-xs flex items-center gap-2 shadow-sm shadow-sky-500/20 transition cursor-pointer"
+                className="self-start sm:self-auto px-4 py-2 rounded-xl bg-gradient-to-r from-sky-600 to-sky-500 hover:from-sky-500 hover:to-sky-600 text-white font-bold text-xs flex items-center gap-2 shadow-sm shadow-sky-500/20 transition cursor-pointer"
               >
                 <UserPlus className="h-4 w-4" /> Add New User
               </button>
             </div>
 
             <div className="border border-slate-200/90 rounded-3xl overflow-hidden bg-white shadow-xs">
-              <table className="w-full text-left text-xs text-slate-700">
-                <thead className="bg-slate-50/80 text-slate-500 border-b border-slate-200 uppercase tracking-wider font-bold">
-                  <tr>
-                    <th className="px-5 py-3.5">Name</th>
-                    <th className="px-5 py-3.5">Email Address</th>
-                    <th className="px-5 py-3.5">Role</th>
-                    <th className="px-5 py-3.5">Leads Scraped</th>
-                    <th className="px-5 py-3.5">Member Since</th>
-                    <th className="px-5 py-3.5 text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {teamMembers.map((member) => (
-                    <tr key={member.id} className="hover:bg-slate-50/70 transition">
-                      <td className="px-5 py-4 font-bold text-slate-900 flex items-center gap-2">
-                        <div className="h-8 w-8 rounded-full bg-sky-100 border border-sky-200 flex items-center justify-center text-xs font-black text-sky-700">
-                          {member.name.charAt(0).toUpperCase()}
-                        </div>
-                        {member.name}
-                        {member.id === currentUser?.id && (
-                          <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full border border-slate-200 font-bold">You</span>
-                        )}
-                      </td>
-                      <td className="px-5 py-4 font-mono text-slate-600">{member.email}</td>
-                      <td className="px-5 py-4">
-                        <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
-                          member.role === 'ADMIN'
-                            ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
-                            : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                        }`}>
-                          {member.role}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4 font-bold text-slate-900">
-                        <span className="bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
-                          {member.totalScraped} leads
-                        </span>
-                      </td>
-                      <td className="px-5 py-4 text-slate-500">
-                        {new Date(member.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-5 py-4 text-right">
-                        {member.id !== currentUser?.id ? (
-                          <button
-                            onClick={() => handleDeleteUser(member.id, member.name)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
-                            title="Delete User"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        ) : (
-                          <span className="text-slate-400 text-xs italic">Current user</span>
-                        )}
-                      </td>
+              <div className="overflow-x-auto no-scrollbar">
+                <table className="w-full text-left text-xs text-slate-700">
+                  <thead className="bg-slate-50/80 text-slate-500 border-b border-slate-200 uppercase tracking-wider font-bold">
+                    <tr>
+                      <th className="px-5 py-3.5">Name</th>
+                      <th className="px-5 py-3.5">Email Address</th>
+                      <th className="px-5 py-3.5">Role</th>
+                      <th className="px-5 py-3.5">Leads Scraped</th>
+                      <th className="px-5 py-3.5">Member Since</th>
+                      <th className="px-5 py-3.5 text-right">Action</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {teamMembers.map((member) => (
+                      <tr key={member.id} className="hover:bg-slate-50/70 transition">
+                        <td className="px-5 py-4 font-bold text-slate-900 flex items-center gap-2">
+                          <div className="h-8 w-8 rounded-full bg-sky-100 border border-sky-200 flex items-center justify-center text-xs font-black text-sky-700">
+                            {member.name.charAt(0).toUpperCase()}
+                          </div>
+                          {member.name}
+                          {member.id === currentUser?.id && (
+                            <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full border border-slate-200 font-bold">You</span>
+                          )}
+                        </td>
+                        <td className="px-5 py-4 font-mono text-slate-600">{member.email}</td>
+                        <td className="px-5 py-4">
+                          <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                            member.role === 'ADMIN'
+                              ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                              : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                          }`}>
+                            {member.role}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4 font-bold text-slate-900">
+                          <span className="bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
+                            {member.totalScraped} leads
+                          </span>
+                        </td>
+                        <td className="px-5 py-4 text-slate-500">
+                          {new Date(member.createdAt).toLocaleDateString()}
+                        </td>
+                        <td className="px-5 py-4 text-right">
+                          {member.id !== currentUser?.id ? (
+                            <button
+                              onClick={() => handleDeleteUser(member.id, member.name)}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
+                              title="Delete User"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          ) : (
+                            <span className="text-slate-400 text-xs italic">Current user</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
 
         {/* Tab 3: WhatsApp Sandbox (Admin Only) */}
         {activeTab === 'sandbox' && currentUser?.role === 'ADMIN' && (
-          <div className="p-6 max-w-2xl mx-auto w-full space-y-6">
-            <div className="p-6 rounded-3xl bg-white border border-slate-200/90 space-y-4 shadow-xs">
+          <div className="p-4 sm:p-6 max-w-2xl mx-auto w-full space-y-6">
+            <div className="p-4 sm:p-6 rounded-3xl bg-white border border-slate-200/90 space-y-4 shadow-xs">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center border border-sky-100">
                   <Smartphone className="h-5 w-5" />
@@ -1593,8 +1640,8 @@ export default function OutreachDashboard() {
 
         {/* Tab 4: Settings (Admin Only) */}
         {activeTab === 'settings' && currentUser?.role === 'ADMIN' && (
-          <div className="p-6 max-w-3xl mx-auto w-full space-y-6">
-            <div className="p-6 rounded-3xl bg-white border border-slate-200/90 space-y-5 shadow-xs">
+          <div className="p-4 sm:p-6 max-w-3xl mx-auto w-full space-y-6">
+            <div className="p-4 sm:p-6 rounded-3xl bg-white border border-slate-200/90 space-y-5 shadow-xs">
               <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
                 <div className="h-10 w-10 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center border border-sky-100">
                   <KeyRound className="h-5 w-5" />
@@ -1630,7 +1677,7 @@ export default function OutreachDashboard() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 pt-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                   <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-2">
                     <label className="text-xs font-bold text-slate-700 block">Default Scrape Lead Limit</label>
                     <input
@@ -1676,8 +1723,8 @@ export default function OutreachDashboard() {
 
         {/* Modal: Add New User (Admin Only) */}
         {isNewUserModalOpen && (
-          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 space-y-5 shadow-2xl">
+          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4">
+            <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-4 sm:p-6 space-y-4 sm:space-y-5 shadow-2xl">
               <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div className="flex items-center gap-2.5">
                   <div className="h-9 w-9 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600">
@@ -1775,8 +1822,8 @@ export default function OutreachDashboard() {
 
         {/* Lead Detail & Pitch Modal */}
         {selectedLead && (
-          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white border border-slate-200 rounded-3xl max-w-xl w-full p-6 space-y-5 shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4">
+            <div className="bg-white border border-slate-200 rounded-3xl max-w-xl w-full p-4 sm:p-6 space-y-4 sm:space-y-5 shadow-2xl overflow-hidden max-h-[92vh] overflow-y-auto">
               <div className="flex items-start justify-between">
                 <div>
                   <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
@@ -1914,8 +1961,8 @@ export default function OutreachDashboard() {
 
         {/* Modal: Export Leads */}
         {isExportModalOpen && (
-          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white border border-slate-200 rounded-3xl max-w-2xl w-full p-6 space-y-5 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4">
+            <div className="bg-white border border-slate-200 rounded-3xl max-w-2xl w-full p-4 sm:p-6 space-y-4 sm:space-y-5 shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
               <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div className="flex items-center gap-2.5">
                   <div className="h-9 w-9 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600">

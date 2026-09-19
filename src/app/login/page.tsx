@@ -47,8 +47,8 @@ export default function LoginPage() {
       <div className="max-w-md w-full relative z-10 space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-gradient-to-tr from-sky-600 to-sky-400 text-white shadow-lg shadow-sky-500/20 mb-2">
-            <Zap className="h-7 w-7" />
+          <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-white border border-sky-300 p-1 shadow-lg shadow-sky-500/10 mb-2 overflow-hidden">
+            <img src="/icon.jpeg" alt="Logo" className="h-full w-full object-cover rounded-xl" />
           </div>
           <h1 className="text-2xl font-black tracking-tight text-slate-900">
             Outreach Command Hub
