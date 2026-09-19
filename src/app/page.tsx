@@ -1184,7 +1184,7 @@ export default function OutreachDashboard() {
 
             {/* Leads Table */}
             <div className="border border-slate-800 rounded-2xl overflow-hidden bg-slate-900/80 shadow-lg">
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto no-scrollbar">
                 <table className="w-full text-left text-xs text-slate-300">
                   <thead className="bg-slate-950/80 text-slate-400 border-b border-slate-800 uppercase tracking-wider font-semibold">
                     <tr>
