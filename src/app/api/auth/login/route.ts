@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { ALLOWED_USERS, AUTH_COOKIE_NAME } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import { AUTH_COOKIE_NAME, encodeSessionCookie, ensureDefaultUsers } from '@/lib/auth';
 
 export async function POST(request: Request) {
   try {
@@ -15,35 +16,33 @@ export async function POST(request: Request) {
     const cleanEmail = email.trim().toLowerCase();
     const cleanPassword = password.trim();
 
-    const user = ALLOWED_USERS.find(
-      (u) => u.email.toLowerCase() === cleanEmail && u.password === cleanPassword
-    );
+    // Ensure default admin & sales user exist in DB and existing leads backfilled
+    await ensureDefaultUsers();
 
-    if (!user) {
+    const user = await prisma.user.findUnique({
+      where: { email: cleanEmail },
+    });
+
+    if (!user || user.password !== cleanPassword) {
       return NextResponse.json(
         { success: false, error: 'Invalid email or password.' },
         { status: 401 }
       );
     }
 
-    // Create session cookie payload
-    const sessionData = {
+    const sessionPayload = {
+      id: user.id,
       email: user.email,
       name: user.name,
-      role: user.role,
-      authenticatedAt: Date.now(),
+      role: user.role as 'ADMIN' | 'SALES',
     };
 
-    const sessionString = Buffer.from(JSON.stringify(sessionData)).toString('base64');
+    const sessionString = encodeSessionCookie(sessionPayload);
 
     const response = NextResponse.json({
       success: true,
       message: 'Login successful',
-      user: {
-        email: user.email,
-        name: user.name,
-        role: user.role,
-      },
+      user: sessionPayload,
     });
 
     response.cookies.set({
@@ -58,6 +57,7 @@ export async function POST(request: Request) {
 
     return response;
   } catch (error: any) {
+    console.error('Login error:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

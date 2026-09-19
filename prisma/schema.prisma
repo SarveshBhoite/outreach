@@ -7,8 +7,23 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id              String        @id @default(cuid())
+  email           String        @unique
+  password        String
+  name            String
+  role            String        @default("SALES") // "ADMIN" | "SALES"
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  scrapedLeads    Lead[]        @relation("UserScrapedLeads")
+  updatedLeads    Lead[]        @relation("UserUpdatedLeads")
+  campaigns       Campaign[]
+}
+
 model Campaign {
   id              String         @id @default(cuid())
+  userId          String?
+  user            User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
   name            String
   targetNiche     String
   targetLocation  String
@@ -27,6 +42,8 @@ model Campaign {
 
 model Lead {
   id                String         @id @default(cuid())
+  userId            String?
+  user              User?          @relation("UserScrapedLeads", fields: [userId], references: [id], onDelete: SetNull)
   campaignId        String?
   campaign          Campaign?      @relation(fields: [campaignId], references: [id], onDelete: SetNull)
   placeId           String?        @unique
@@ -64,6 +81,13 @@ model Lead {
   status            String         @default("DISCOVERED") // DISCOVERED, AUDITED, QUEUED, SENT, DELIVERED, READ, REPLIED, CONVERTED
   lastMessageSentAt DateTime?
   lastError         String?
+
+  // Sales Workflow & Remarks
+  leadStatus        String         @default("PENDING") // PENDING, CONTACTED, DONE, CLOSED
+  remarks           String?
+  lastUpdatedById   String?
+  lastUpdatedBy     User?          @relation("UserUpdatedLeads", fields: [lastUpdatedById], references: [id], onDelete: SetNull)
+  lastContactedAt   DateTime?
   
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt

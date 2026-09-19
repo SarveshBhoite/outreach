@@ -2,37 +2,69 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sendWhatsAppMessage } from '@/lib/whatsapp';
 import { cleanBusinessName, cleanCategoryName, cleanLocationName } from '@/lib/aiPitch';
+import { getSessionFromCookies } from '@/lib/auth';
 
 export async function GET(request: Request) {
   try {
+    const session = await getSessionFromCookies();
+    if (!session) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const pageParam = searchParams.get('page');
     const limitParam = searchParams.get('limit');
-    const allParam = searchParams.get('all'); // When true (e.g. for full export), bypasses limit
+    const allParam = searchParams.get('all');
+    const userFilterParam = searchParams.get('userId');
+    const statusFilterParam = searchParams.get('leadStatus'); // PENDING, CONTACTED, DONE, CLOSED
 
     const isAll = allParam === 'true';
     const page = Math.max(1, parseInt(pageParam || '1', 10));
     const limit = Math.max(1, parseInt(limitParam || '20', 10));
     const skip = (page - 1) * limit;
 
+    // Isolation: SALES reps can ONLY see their own leads. ADMIN can see all or filter by rep.
+    const whereClause: any = {};
+    if (session.role === 'SALES') {
+      whereClause.userId = session.id;
+    } else if (session.role === 'ADMIN' && userFilterParam && userFilterParam !== 'ALL') {
+      whereClause.userId = userFilterParam;
+    }
+
+    if (statusFilterParam && statusFilterParam !== 'ALL') {
+      whereClause.leadStatus = statusFilterParam;
+    }
+
     const [totalCount, leads] = await Promise.all([
-      prisma.lead.count(),
+      prisma.lead.count({ where: whereClause }),
       prisma.lead.findMany({
+        where: whereClause,
         orderBy: { createdAt: 'desc' },
         ...(isAll ? {} : { skip, take: limit }),
         include: {
           campaign: {
             select: { name: true, targetNiche: true, targetLocation: true },
           },
+          user: {
+            select: { id: true, name: true, email: true },
+          },
+          lastUpdatedBy: {
+            select: { id: true, name: true, email: true },
+          },
         },
       }),
     ]);
 
+    // Role-isolated stats
+    const statsWhere = session.role === 'SALES' ? { userId: session.id } : {};
     const stats = {
-      totalLeads: totalCount,
-      totalAudited: await prisma.lead.count({ where: { status: { not: 'DISCOVERED' } } }),
-      totalSent: await prisma.lead.count({ where: { isTemplateSent: true } }),
-      totalPending: await prisma.lead.count({ where: { isTemplateSent: false } }),
+      totalLeads: await prisma.lead.count({ where: statsWhere }),
+      totalAudited: await prisma.lead.count({ where: { ...statsWhere, status: { not: 'DISCOVERED' } } }),
+      totalSent: await prisma.lead.count({ where: { ...statsWhere, isTemplateSent: true } }),
+      totalPending: await prisma.lead.count({ where: { ...statsWhere, leadStatus: 'PENDING' } }),
+      totalContacted: await prisma.lead.count({ where: { ...statsWhere, leadStatus: 'CONTACTED' } }),
+      totalDone: await prisma.lead.count({ where: { ...statsWhere, leadStatus: 'DONE' } }),
+      totalClosed: await prisma.lead.count({ where: { ...statsWhere, leadStatus: 'CLOSED' } }),
     };
 
     const totalPages = Math.ceil(totalCount / limit) || 1;
@@ -57,15 +89,85 @@ export async function GET(request: Request) {
   }
 }
 
+// Update lead status (PENDING, CONTACTED, DONE, CLOSED) and remarks
+export async function PATCH(request: Request) {
+  try {
+    const session = await getSessionFromCookies();
+    if (!session) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { leadId, leadStatus, remarks } = body;
+
+    if (!leadId) {
+      return NextResponse.json({ success: false, error: 'Lead ID is required' }, { status: 400 });
+    }
+
+    const lead = await prisma.lead.findUnique({ where: { id: leadId } });
+    if (!lead) {
+      return NextResponse.json({ success: false, error: 'Lead not found' }, { status: 404 });
+    }
+
+    // Sales users can only edit their own leads
+    if (session.role === 'SALES' && lead.userId && lead.userId !== session.id) {
+      return NextResponse.json({ success: false, error: 'Access denied: You do not own this lead.' }, { status: 403 });
+    }
+
+    const updateData: any = {
+      lastUpdatedById: session.id,
+      updatedAt: new Date(),
+    };
+
+    if (leadStatus !== undefined) {
+      updateData.leadStatus = leadStatus;
+      if (leadStatus === 'CONTACTED') {
+        updateData.lastContactedAt = new Date();
+      }
+    }
+
+    if (remarks !== undefined) {
+      updateData.remarks = remarks;
+    }
+
+    const updated = await prisma.lead.update({
+      where: { id: leadId },
+      data: updateData,
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        lastUpdatedBy: { select: { id: true, name: true, email: true } },
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Lead updated successfully',
+      lead: updated,
+    });
+  } catch (error: unknown) {
+    const err = error as Error;
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  }
+}
+
 // Single-click send template to individual lead from Lead CRM table modal
 export async function POST(request: Request) {
   try {
+    const session = await getSessionFromCookies();
+    if (!session) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { leadId } = body;
 
     const lead = await prisma.lead.findUnique({ where: { id: leadId } });
     if (!lead || !lead.formattedPhone) {
       return NextResponse.json({ success: false, error: 'Lead not found or missing valid phone.' }, { status: 400 });
+    }
+
+    if (session.role === 'SALES' && lead.userId && lead.userId !== session.id) {
+      return NextResponse.json({ success: false, error: 'Access denied: You can only message your own leads.' }, { status: 403 });
     }
 
     // Determine correct Meta template
@@ -88,10 +190,8 @@ export async function POST(request: Request) {
 
     let templateParameters: string[] = [];
     if (templateName === 'universal_b2b_seo_intro') {
-      // universal_b2b_seo_intro: {{1}} Business Name, {{2}} Category, {{3}} Location, {{4}} Rating
       templateParameters = [name, cleanCategory, location, ratingStr];
     } else {
-      // universal_b2b_web_v2 and universal_b2b_crm_intro: {{1}} Business Name, {{2}} Rating, {{3}} Location, {{4}} Category
       templateParameters = [name, ratingStr, location, cleanCategory];
     }
 
@@ -111,6 +211,9 @@ export async function POST(request: Request) {
           templateParameters: JSON.stringify(templateParameters),
           isTemplateSent: true,
           status: 'SENT',
+          leadStatus: lead.leadStatus === 'PENDING' ? 'CONTACTED' : lead.leadStatus,
+          lastContactedAt: new Date(),
+          lastUpdatedById: session.id,
           lastMessageSentAt: new Date(),
         },
       });

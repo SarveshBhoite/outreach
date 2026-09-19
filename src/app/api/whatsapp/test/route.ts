@@ -1,9 +1,15 @@
 import { NextResponse } from 'next/server';
 import { sendWhatsAppMessage } from '@/lib/whatsapp';
 import { normalizePhoneNumber } from '@/lib/places';
+import { getSessionFromCookies } from '@/lib/auth';
 
 export async function POST(request: Request) {
   try {
+    const session = await getSessionFromCookies();
+    if (!session || session.role !== 'ADMIN') {
+      return NextResponse.json({ success: false, error: 'Access denied. Admin only.' }, { status: 403 });
+    }
+
     const body = await request.json();
     const { phoneNumber, message, templateName, provider } = body;
 

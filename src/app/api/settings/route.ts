@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getSessionFromCookies } from '@/lib/auth';
 
 export async function GET() {
   try {
+    const session = await getSessionFromCookies();
+    if (!session || session.role !== 'ADMIN') {
+      return NextResponse.json({ success: false, error: 'Access denied. Admin only.' }, { status: 403 });
+    }
+
     let settings = await prisma.appSettings.findUnique({
       where: { id: 'global_settings' },
     });
@@ -28,6 +34,11 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const session = await getSessionFromCookies();
+    if (!session || session.role !== 'ADMIN') {
+      return NextResponse.json({ success: false, error: 'Access denied. Admin only.' }, { status: 403 });
+    }
+
     const body = await request.json();
     const settings = await prisma.appSettings.upsert({
       where: { id: 'global_settings' },

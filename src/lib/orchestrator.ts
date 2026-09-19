@@ -20,7 +20,8 @@ export async function runAutopilotPipeline(
   customNiche?: string,
   customLocation?: string,
   overrideAutoDispatch?: boolean,
-  overrideScrapeLimit?: number
+  overrideScrapeLimit?: number,
+  userId?: string
 ): Promise<PipelineRunResult> {
   const logs: string[] = [];
   logs.push(`[${new Date().toLocaleTimeString()}] 🚀 Initiating Outreach Pipeline...`);
@@ -94,6 +95,7 @@ export async function runAutopilotPipeline(
       targetNiche: strategy.targetNiche,
       targetLocation: strategy.targetLocation,
       status: 'ACTIVE',
+      ...(userId ? { user: { connect: { id: userId } } } : {}),
     },
   });
 
@@ -153,6 +155,8 @@ export async function runAutopilotPipeline(
             campaign: {
               connect: { id: campaign.id },
             },
+            ...(userId ? { user: { connect: { id: userId } } } : {}),
+            leadStatus: 'PENDING',
             placeId: raw.placeId,
             businessName: raw.businessName,
             category: raw.category || strategy.targetNiche,
@@ -187,6 +191,8 @@ export async function runAutopilotPipeline(
         lead = await prisma.lead.update({
           where: { id: lead.id },
           data: {
+            // Keep original owner if present, or assign to current user if unowned
+            ...(!lead.userId && userId ? { user: { connect: { id: userId } } } : {}),
             email: audit.extractedEmail || lead.email,
             assignedTemplate: aiPitch.metaTemplateName,
             templateParameters: JSON.stringify(aiPitch.metaTemplateParameters),

@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
 import { runAutopilotPipeline } from '@/lib/orchestrator';
+import { getSessionFromCookies } from '@/lib/auth';
 
 export async function POST(request: Request) {
   try {
+    const session = await getSessionFromCookies();
+    if (!session) {
+      return NextResponse.json({ success: false, error: 'Unauthorized. Please log in.' }, { status: 401 });
+    }
+
     const body = await request.json().catch(() => ({}));
     const { customNiche, customLocation, overrideAutoDispatch, overrideScrapeLimit } = body;
 
@@ -10,7 +16,8 @@ export async function POST(request: Request) {
       customNiche,
       customLocation,
       overrideAutoDispatch,
-      overrideScrapeLimit ? parseInt(overrideScrapeLimit, 10) : undefined
+      overrideScrapeLimit ? parseInt(overrideScrapeLimit, 10) : undefined,
+      session.id
     );
 
     return NextResponse.json({
