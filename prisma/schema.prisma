@@ -13,6 +13,7 @@ model User {
   password        String
   name            String
   role            String        @default("SALES") // "ADMIN" | "SALES"
+  isHidden        Boolean       @default(false)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
   scrapedLeads    Lead[]        @relation("UserScrapedLeads")

@@ -23,12 +23,21 @@ export async function GET(request: Request) {
     const limit = Math.max(1, parseInt(limitParam || '20', 10));
     const skip = (page - 1) * limit;
 
-    // Isolation: SALES reps can ONLY see their own leads. ADMIN can see all or filter by rep.
+    // Isolation: SALES reps can ONLY see their own leads. ADMIN can see all visible users' leads or filter by rep.
     const whereClause: any = {};
     if (session.role === 'SALES') {
       whereClause.userId = session.id;
-    } else if (session.role === 'ADMIN' && userFilterParam && userFilterParam !== 'ALL') {
-      whereClause.userId = userFilterParam;
+    } else if (session.role === 'ADMIN') {
+      if (userFilterParam && userFilterParam !== 'ALL') {
+        whereClause.userId = userFilterParam;
+      }
+      // Never expose leads owned by hidden demo users to admin
+      whereClause.user = {
+        OR: [
+          { isHidden: false },
+          { id: session.id },
+        ],
+      };
     }
 
     if (statusFilterParam && statusFilterParam !== 'ALL') {
@@ -56,7 +65,14 @@ export async function GET(request: Request) {
     ]);
 
     // Role-isolated stats
-    const statsWhere = session.role === 'SALES' ? { userId: session.id } : {};
+    const statsWhere: any = session.role === 'SALES' ? { userId: session.id } : {
+      user: {
+        OR: [
+          { isHidden: false },
+          { id: session.id },
+        ],
+      },
+    };
     const stats = {
       totalLeads: await prisma.lead.count({ where: statsWhere }),
       totalAudited: await prisma.lead.count({ where: { ...statsWhere, status: { not: 'DISCOVERED' } } }),
