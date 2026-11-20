@@ -185,29 +185,27 @@ export default function OutreachDashboard() {
 
   // Selectable Export Fields
   const availableExportFields = [
-    { key: 'businessName', label: 'Business Name', defaultChecked: true },
-    { key: 'leadStatus', label: 'Sales Status', defaultChecked: true },
-    { key: 'remarks', label: 'Remarks / Notes', defaultChecked: true },
-    { key: 'category', label: 'Niche / Category', defaultChecked: true },
-    { key: 'city', label: 'City / Location', defaultChecked: true },
-    { key: 'formattedPhone', label: 'Phone (WhatsApp)', defaultChecked: true },
-    { key: 'email', label: 'Email Address', defaultChecked: true },
-    { key: 'websiteUrl', label: 'Website URL', defaultChecked: true },
-    { key: 'googleRating', label: 'Google Rating', defaultChecked: true },
+    { key: 'businessName', label: 'Business Name', defaultChecked: false },
+    { key: 'leadStatus', label: 'Sales Status', defaultChecked: false },
+    { key: 'remarks', label: 'Remarks / Notes', defaultChecked: false },
+    { key: 'category', label: 'Niche / Category', defaultChecked: false },
+    { key: 'city', label: 'City / Location', defaultChecked: false },
+    { key: 'formattedPhone', label: 'Phone (WhatsApp)', defaultChecked: false },
+    { key: 'email', label: 'Email Address', defaultChecked: false },
+    { key: 'websiteUrl', label: 'Website URL', defaultChecked: false },
+    { key: 'googleRating', label: 'Google Rating', defaultChecked: false },
     { key: 'reviewCount', label: 'Review Count', defaultChecked: false },
-    { key: 'pitchAngle', label: 'Pitch Angle', defaultChecked: true },
-    { key: 'assignedTemplate', label: 'Assigned Meta Template', defaultChecked: true },
-    { key: 'isTemplateSent', label: 'Template Sent Status', defaultChecked: true },
-    { key: 'scrapedBy', label: 'Scraped By (Rep)', defaultChecked: true },
+    { key: 'pitchAngle', label: 'Pitch Angle', defaultChecked: false },
+    { key: 'assignedTemplate', label: 'Assigned Meta Template', defaultChecked: false },
+    { key: 'isTemplateSent', label: 'Template Sent Status', defaultChecked: false },
+    { key: 'scrapedBy', label: 'Scraped By (Rep)', defaultChecked: false },
     { key: 'auditSummary', label: 'Digital Footprint Audit', defaultChecked: false },
     { key: 'personalizedPitch', label: 'Tailored Pitch Copy', defaultChecked: false },
     { key: 'address', label: 'Full Address', defaultChecked: false },
-    { key: 'createdAt', label: 'Scraped Date & Time', defaultChecked: true },
+    { key: 'createdAt', label: 'Scraped Date & Time', defaultChecked: false },
   ];
 
-  const [selectedFields, setSelectedFields] = useState<string[]>(
-    availableExportFields.filter((f) => f.defaultChecked).map((f) => f.key)
-  );
+  const [selectedFields, setSelectedFields] = useState<string[]>([]);
 
   const toggleExportField = (fieldKey: string) => {
     setSelectedFields((prev) =>
@@ -220,7 +218,7 @@ export default function OutreachDashboard() {
   };
 
   const deselectAllFields = () => {
-    setSelectedFields(['businessName', 'leadStatus', 'remarks', 'formattedPhone', 'email']);
+    setSelectedFields([]);
   };
 
   // Fetch Current Logged-in User
@@ -368,8 +366,15 @@ export default function OutreachDashboard() {
         return selectedFields
           .map((k) => {
             const meta = availableExportFields.find((f) => f.key === k);
-            const val = String(row[meta?.label || k] ?? '');
-            return `"${val.replace(/"/g, '""')}"`;
+            const rawVal = row[meta?.label || k] ?? '';
+            // If the field is a phone number or purely numeric digits (e.g. 919876543210),
+            // output as `="919876543210"` so Excel/Google Sheets reads it as a literal string
+            // and never converts it into scientific notation like 9.19876E+11.
+            const strVal = String(rawVal);
+            if (k === 'formattedPhone' || k === 'phoneNumber' || (/^\+?\d{10,15}$/.test(strVal.trim()))) {
+              return `="${strVal.replace(/"/g, '""')}"`;
+            }
+            return `"${strVal.replace(/"/g, '""')}"`;
           })
           .join(',');
       });
